@@ -5,7 +5,7 @@
 <style>
 *{box-sizing:border-box}body{font-family:system-ui,'Noto Sans Thai',sans-serif;background:#f1f5f9;color:#172033;margin:0}header{background:#153c72;color:#fff;padding:18px 22px}header h2{margin:0;font-size:21px}header small{opacity:.85}.wrap{max-width:1050px;margin:20px auto;padding:0 14px}.card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 3px 16px #0f172a12}h3{margin:0 0 14px}label{display:block;margin-top:12px;font-weight:600;font-size:14px}input,select,button{font:inherit}input,select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;margin-top:5px;background:#fff}button{background:#1565c0;color:white;border:0;border-radius:10px;padding:10px 17px;cursor:pointer;margin-top:12px}button:disabled{background:#94a3b8;cursor:not-allowed}.secondary{background:#475569}.danger{color:#b91c1c}.ok{color:#16784b}.muted{color:#64748b;font-size:13px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.zone-number{background:transparent;border:0;box-shadow:none;color:#fff;font-weight:800;font-size:14px;padding:0;pointer-events:none}.zone-number:before{display:none}.map{width:100%;height:350px;border-radius:12px;margin-top:12px;border:1px solid #cbd5e1}.pill{padding:6px 10px;border-radius:50px;background:#e2e8f0;font-size:13px}.hide{display:none!important}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:13px}.msg{padding:10px 12px;border-radius:10px;background:#e8f1ff;margin-bottom:14px;white-space:pre-wrap}.info{padding:10px;background:#f8fafc;border-radius:10px;margin-top:10px}.display-grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:12px;margin-top:14px}.display-panel{min-width:0;background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:12px}.display-panel .map{height:290px;margin-top:8px}.photo-live{width:100%;max-height:280px;aspect-ratio:4/3;object-fit:contain;background:#e2e8f0;border-radius:10px}.foot{font-size:12px;color:#64748b;margin:20px 0}@media(max-width:850px){.display-grid{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.map{height:300px}}
 </style></head><body>
-<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V11 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
+<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V12.1 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
 <div class="wrap">
 <div id="message" class="msg hide"></div>
 <section id="loginCard" class="card"><h3>เริ่มใช้งาน</h3><label>เลือกประเภทผู้ใช้<select id="role" onchange="toggleLoginFields()"><option value="student">นักเรียน (ไม่ต้องล็อกอิน)</option><option value="teacher">ครูผู้สอน</option></select></label><label id="userLabel">รหัสนักเรียน<input id="userId" autocomplete="off" placeholder="กรอกรหัสนักเรียน"></label><label id="passwordLabel" class="hide">รหัสผ่านครู<input id="password" type="password" autocomplete="current-password"></label><button onclick="signIn()" id="signInBtn">ตรวจสอบรหัสนักเรียน</button><p class="muted">การกรอกรหัสนักเรียนเพียงอย่างเดียวไม่สามารถยืนยันเจ้าของรหัสได้</p></section>
@@ -45,51 +45,33 @@ const $=id=>document.getElementById(id);
 window.addEventListener('DOMContentLoaded',initWeeklyForm);
 const escapeHtml=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function msg(s,err=false){$('message').textContent=s;$('message').classList.remove('hide');$('message').style.background=err?'#fee2e2':'#e8f1ff';}
-// Set your deployed Apps Script /exec URL here. Do NOT paste passwords or API keys.
-const APPS_SCRIPT_EXEC_URL = 'https://script.google.com/macros/s/AKfycbyeohnvccWovfQeE_hO8JC6B_3xu2RVupLb-ziNblSC3z5NeSIIMLEvioBuqIPWuheCow/exec';
-const ATTENDANCE_RPC_TIMEOUT_MS = 75000;
-const attendancePending = new Map();
-let attendanceCounter = 0;
-function attendanceTrustedOrigin(origin) {
+// V12.1: Set ONLY the public Cloudflare Worker URL below.
+// Do not put the Apps Script URL, teacher password or secret in this public page.
+const API_URL = 'https://attendance-v12-api.ep02rytc.workers.dev';
+const ATTENDANCE_RPC_TIMEOUT_MS = 60000;
+async function api(fn,...args) {
+  if (!/^https:\/\/[a-z0-9.-]+\.workers\.dev\/?$/i.test(API_URL)) {
+    throw new Error('ยังไม่ได้ตั้งค่า API_URL เป็นลิงก์ Cloudflare Worker (.workers.dev) ในไฟล์ GitHub');
+  }
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),ATTENDANCE_RPC_TIMEOUT_MS);
   try {
-    const u=new URL(origin);
-    return u.protocol==='https:' && (u.hostname==='script.google.com' || u.hostname==='script.googleusercontent.com' || u.hostname.endsWith('.script.googleusercontent.com'));
-  } catch (e) { return false; }
-}
-window.addEventListener('message', event=>{
-  if (!attendanceTrustedOrigin(event.origin)) return;
-  const d=event.data;
-  if (!d || d.channel!=='attendance-v11-rpc' || !attendancePending.has(d.id)) return;
-  const p=attendancePending.get(d.id);
-  attendancePending.delete(d.id); clearTimeout(p.timeout);
-  p.iframe.remove();
-  if (d.ok) p.resolve(d.value);
-  else p.reject(new Error(d.error || 'การเชื่อมต่อไม่สำเร็จ'));
-});
-function api(fn,...args) {
-  return new Promise((resolve,reject)=>{
-    if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:\?.*)?$/.test(APPS_SCRIPT_EXEC_URL)) {
-      reject(new Error('กรุณากำหนด APPS_SCRIPT_EXEC_URL ใน index.html ให้เป็นลิงก์ /exec ที่เผยแพร่แล้ว'));
-      return;
-    }
-    const id='r'+Date.now().toString(36)+'_'+(++attendanceCounter).toString(36)+'_'+Math.random().toString(36).slice(2);
-    const iframe=document.createElement('iframe');
-    iframe.name='attendance_target_'+id;
-    iframe.setAttribute('aria-hidden','true');
-    iframe.style.cssText='position:absolute;width:0;height:0;border:0;visibility:hidden';
-    const form=document.createElement('form');
-    form.method='POST';form.action=APPS_SCRIPT_EXEC_URL;form.target=iframe.name;
-    form.style.display='none';form.acceptCharset='UTF-8';
-    const input=document.createElement('input');input.type='hidden';input.name='rpcData';
-    input.value=JSON.stringify({id,method:fn,args:args});form.appendChild(input);
-    document.body.appendChild(iframe);document.body.appendChild(form);
-    const timeout=setTimeout(()=>{
-      attendancePending.delete(id);iframe.remove();
-      reject(new Error('ไม่ได้รับคำตอบจาก Apps Script โปรดตรวจสิทธิ์ Anyone, URL /exec และการตั้งค่าเบราว์เซอร์'));
-    },ATTENDANCE_RPC_TIMEOUT_MS);
-    attendancePending.set(id,{resolve,reject,iframe,timeout});
-    try {form.submit();} catch(err) {clearTimeout(timeout);attendancePending.delete(id);iframe.remove();reject(err);} finally {form.remove();}
-  });
+    const response=await fetch(API_URL.replace(/\/$/,'')+'/rpc',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      mode:'cors',
+      cache:'no-store',
+      signal:controller.signal,
+      body:JSON.stringify({id:'r'+crypto.randomUUID().replace(/-/g,''),method:fn,args})
+    });
+    let payload;
+    try{payload=await response.json();}catch(e){throw new Error('API ส่งข้อมูลกลับมาไม่ใช่ JSON (HTTP '+response.status+')');}
+    if(!response.ok || !payload.ok)throw new Error(payload.error||'การเชื่อมต่อผิดพลาด (HTTP '+response.status+')');
+    return payload.value;
+  }catch(e){
+    if(e.name==='AbortError')throw new Error('การเชื่อมต่อใช้เวลานานเกินไป กรุณาตรวจสถานะในชีตก่อนลองบันทึกซ้ำ');
+    throw e;
+  }finally{clearTimeout(timer);}
 }
 
 // Refresh open sessions from server every 15 seconds; no client-only trust.
