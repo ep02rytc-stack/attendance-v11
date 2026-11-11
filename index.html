@@ -1,13 +1,441 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ระบบเช็คชื่อด้วยภาพถ่าย</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}body{font-family:system-ui,'Noto Sans Thai',sans-serif;background:#f1f5f9;color:#172033;margin:0}header{background:#153c72;color:#fff;padding:18px 22px}header h2{margin:0;font-size:21px}header small{opacity:.85}.wrap{max-width:1050px;margin:20px auto;padding:0 14px}.card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 3px 16px #0f172a12}h3{margin:0 0 14px}label{display:block;margin-top:12px;font-weight:600;font-size:14px}input,select,button{font:inherit}input,select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;margin-top:5px;background:#fff}button{background:#1565c0;color:white;border:0;border-radius:10px;padding:10px 17px;cursor:pointer;margin-top:12px}button:disabled{background:#94a3b8;cursor:not-allowed}.secondary{background:#475569}.danger{color:#b91c1c}.ok{color:#16784b}.muted{color:#64748b;font-size:13px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.zone-number{background:transparent;border:0;box-shadow:none;color:#fff;font-weight:800;font-size:14px;padding:0;pointer-events:none}.zone-number:before{display:none}.map{width:100%;height:350px;border-radius:12px;margin-top:12px;border:1px solid #cbd5e1}.pill{padding:6px 10px;border-radius:50px;background:#e2e8f0;font-size:13px}.hide{display:none!important}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:13px}.msg{padding:10px 12px;border-radius:10px;background:#e8f1ff;margin-bottom:14px;white-space:pre-wrap}.info{padding:10px;background:#f8fafc;border-radius:10px;margin-top:10px}.display-grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:12px;margin-top:14px}.display-panel{min-width:0;background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:12px}.display-panel .map{height:290px;margin-top:8px}.photo-live{width:100%;max-height:280px;aspect-ratio:4/3;object-fit:contain;background:#e2e8f0;border-radius:10px}.foot{font-size:12px;color:#64748b;margin:20px 0}@media(max-width:850px){.display-grid{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.map{height:300px}}
+</style></head><body>
+<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V11 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
+<div class="wrap">
+<div id="message" class="msg hide"></div>
+<section id="loginCard" class="card"><h3>เริ่มใช้งาน</h3><label>เลือกประเภทผู้ใช้<select id="role" onchange="toggleLoginFields()"><option value="student">นักเรียน (ไม่ต้องล็อกอิน)</option><option value="teacher">ครูผู้สอน</option></select></label><label id="userLabel">รหัสนักเรียน<input id="userId" autocomplete="off" placeholder="กรอกรหัสนักเรียน"></label><label id="passwordLabel" class="hide">รหัสผ่านครู<input id="password" type="password" autocomplete="current-password"></label><button onclick="signIn()" id="signInBtn">ตรวจสอบรหัสนักเรียน</button><p class="muted">การกรอกรหัสนักเรียนเพียงอย่างเดียวไม่สามารถยืนยันเจ้าของรหัสได้</p></section>
+<section id="app" class="hide"><div class="row" style="justify-content:space-between;margin-bottom:15px"><b id="welcome"></b><button class="secondary" onclick="signOut()">ออกจากระบบ</button></div>
+<div id="studentView" class="hide"><section class="card"><h3>เลือกการเช็คชื่อ</h3><label>รอบเช็คชื่อ<select id="studentSession" onchange="selectStudentSession()"></select></label><div id="studentDetails" class="info"></div><div id="studentMap" class="map"></div><div id="gpsStatus" class="info">พื้นที่สีฟ้าเป็นเขตอ้างอิงที่ครูกำหนด • ไม่มีการเก็บหรือตรวจพิกัดโทรศัพท์</div><section class="info"><b>📷 ถ่ายภาพเพื่อบันทึกหลักฐานเช็คชื่อ</b><p class="muted">เมื่อถ่ายภาพและยืนยัน ระบบจะบันทึกไฟล์ภาพลง Google Drive ส่วนตัวของผู้ดูแล เพื่อให้ครูตรวจย้อนหลังได้ ภาพไม่ใช่การตรวจใบหน้าอัตโนมัติ</p><video id="cameraView" autoplay playsinline muted class="hide" style="width:100%;max-width:340px;border-radius:10px;background:#111"></video><canvas id="cameraCanvas" class="hide"></canvas><img id="photoPreview" class="hide" alt="ตัวอย่างภาพที่ถ่าย" style="width:100%;max-width:340px;border-radius:10px"><div class="row"><button id="cameraBtn" type="button" onclick="startCamera()">เปิดกล้องหน้า</button><button id="snapBtn" class="hide" type="button" onclick="snapPhoto()">ถ่ายภาพยืนยัน</button><button id="retakeBtn" class="hide secondary" type="button" onclick="startCamera()">ถ่ายใหม่</button></div><p id="photoStatus" class="muted">ยังไม่ได้ถ่ายภาพ</p></section><div class="row"><button id="checkBtn" onclick="submitCheckIn()" disabled>ยืนยันเช็คชื่อ</button></div><p class="muted">ระบบไม่ขอสิทธิ์เข้าถึงตำแหน่งและไม่ตรวจสอบ GPS • ภาพจัดเก็บใน Drive ส่วนตัวของเจ้าของระบบ</p></section></div>
+<div id="teacherView" class="hide"><section class="card"><h3>ครู: สร้างรอบเช็คชื่อและกำหนดขอบเขต</h3><div class="grid"><div><label>ประเภท<select id="type" onchange="refreshCourses()"><option value="ASSEMBLY">เข้าแถวตอนเช้า</option><option value="CLASS">เข้าเรียนรายวิชา</option></select></label><label>ห้องเรียน<select id="group" onchange="refreshCourses()"></select></label><label id="courseWrap">รายวิชา<select id="course"></select></label><label>ชื่อรอบ<input id="title" placeholder="เช่น เข้าแถวประจำวันที่ 6 พ.ย."></label><label>เริ่มเช็คชื่อ<input type="datetime-local" id="start"></label><label>สิ้นสุดเวลาไม่สาย<input type="datetime-local" id="late"></label><label>ปิดเช็คชื่อ<input type="datetime-local" id="end"></label></div><div><label>รูปแบบโซน<select id="zoneType" onchange="zoneTypeChanged()"><option value="RECTANGLE">โซนสี่เหลี่ยม (แตะ 2 มุม)</option><option value="POLYGON">โซนอิสระ (แตะอย่างน้อย 3 มุม)</option></select></label><input id="accuracy" type="hidden" value="15"><div class="row"><button type="button" id="drawZoneBtn" onclick="toggleZoneDrawing()">เริ่มวาดโซน</button><button type="button" class="secondary" onclick="undoZonePoint()">ย้อนกลับ 1 จุด</button><button type="button" class="secondary" onclick="clearZone()">ล้างโซน</button><button type="button" class="secondary" onclick="testZoneDrawing()">ทดสอบ 3 จุด</button></div><div id="zoneHelp" class="info" role="status" aria-live="polite">กดเริ่มวาดโซน จากนั้นแตะมุมบนแผนที่</div><p class="muted">สีฟ้าคือพื้นที่อ้างอิงเท่านั้น ไม่มีการตรวจ GPS หรือพิกัดนักเรียน</p></div></div><div id="teacherMap" class="map"></div>
+<div class="info" style="margin-top:12px"><label style="display:flex;align-items:center;gap:10px"><input type="checkbox" id="repeatWeekly" onchange="toggleWeekly()" style="width:auto;margin:0">ตั้งเวลาแบบประจำสัปดาห์ (จันทร์–อาทิตย์)</label>
+<div id="weeklyControls" class="hide">
+<p class="muted">เลือกวันและกำหนดช่วงเวลา ระบบสร้างรอบรายวันโดยอัตโนมัติเมื่อเปิดหน้าเว็บ ไม่ต้องเปิดรอบเองทุกเช้า</p>
+<div class="row" id="weeklyDays" style="gap:12px;flex-wrap:wrap"></div>
+<div class="grid"><div><label>เริ่มใช้ตารางตั้งแต่วันที่<input id="weeklyFrom" type="date"></label><label>เวลาเริ่มเช็คชื่อ<input id="weeklyStart" type="time" value="07:45"></label><label>เริ่มนับสายเวลา<input id="weeklyLate" type="time" value="08:00"></label></div><div><label>ใช้ตารางถึงวันที่<input id="weeklyTo" type="date"></label><label>เวลาปิดเช็คชื่อ<input id="weeklyEnd" type="time" value="08:15"></label></div></div>
+<p class="muted">หากวันใดต้องการเวลาไม่เหมือนกัน ให้สร้างตารางเพิ่มอีกชุดโดยเลือกเฉพาะวันนั้น เช่น เสาร์ 09:00–10:00</p>
+</div></div>
+<button id="saveSessionBtn" onclick="saveSession()">บันทึกรอบเช็คชื่อ</button>
+<div class="info" style="margin-top:16px"><b>ตารางเช็คชื่อประจำสัปดาห์</b><div id="weeklyList" style="margin-top:8px">ยังไม่มีตาราง</div></div></section>
+<section class="card"><h3>นำเข้ารายชื่อนักเรียนจาก Excel</h3>
+<p class="muted">รองรับไฟล์รายงานรายชื่อแยกตามกลุ่ม (หัวตารางแถว 10) และแม่แบบ Students • ไม่ส่งเลขบัตรประชาชนไปยังเซิร์ฟเวอร์</p>
+<label>เลือกไฟล์ Excel (.xlsx / .xls)<input id="rosterFile" type="file" accept=".xlsx,.xls,.csv" onchange="parseRosterFile()"></label>
+<div id="rosterSummary" class="info">ยังไม่ได้เลือกไฟล์</div>
+<div id="rosterPreview" style="max-height:300px;overflow:auto;margin-top:10px"></div>
+<label style="display:flex;align-items:center;gap:9px"><input id="rosterUpdate" type="checkbox" style="width:auto;margin:0">อัปเดตชื่อ/ห้องของรหัสที่มีอยู่แล้ว (ไม่ลบประวัติ)</label>
+<div class="row"><button id="rosterCheckBtn" disabled class="secondary" onclick="checkRosterImport()">ตรวจสอบกับฐานข้อมูล</button><button id="rosterImportBtn" disabled onclick="commitRosterImport()">ยืนยันนำเข้ารายชื่อ</button></div>
+<p class="muted">ระบบข้ามรหัสซ้ำโดยปริยาย • ควรสำรอง Google Sheets ก่อนนำเข้า • ห้ามนำเข้าบัญชีครูหรือเลขบัตรประชาชน</p>
+</section>
+<section class="card"><h3>ดิสเพลย์ครู / รายงาน</h3><label>เลือกรอบ<select id="reportSession" onchange="loadReport()"></select></label><button class="secondary" onclick="loadTeacherHome()">รีเฟรชรายการ</button>
+<div class="display-grid">
+  <div class="display-panel"><h3>1. ข้อมูล</h3><div id="liveInfo" class="info">รอการเช็คชื่อ…</div><div id="liveCounts" class="info">กำลังโหลดสรุป</div></div>
+  <div class="display-panel"><h3>2. พื้นที่อ้างอิงบนแผนที่</h3><div id="liveMap" class="map"></div><p id="liveGps" class="muted">แสดงเฉพาะโซนที่ครูกำหนด ไม่แสดงตำแหน่งนักเรียน</p></div>
+  <div class="display-panel"><h3>3. ภาพถ่าย</h3><img id="livePhoto" class="photo-live hide" alt="ภาพยืนยันการเช็คชื่อครั้งล่าสุด"><div id="livePhotoPlaceholder" class="info">รอภาพจากการเช็คชื่อ • ครูสามารถเปิดภาพย้อนหลังในตารางรายชื่อ</div><p class="muted">ภาพถูกบันทึกเป็นไฟล์ส่วนตัวใน Google Drive และเก็บรหัสไฟล์ในชีต Attendance</p></div>
+</div><h3 style="margin-top:20px">รายชื่อนักเรียน</h3><div id="report"></div></section></div>
+</section><p class="foot">แผนที่ดาวเทียม © Esri และผู้ให้บริการข้อมูลภาพถ่าย • แผนที่ถนน © OpenStreetMap contributors • ติดต่อผู้ดูแลระบบวิทยาลัยเพื่อแจ้งข้อผิดพลาด</p></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script>
+let zoneDrawingError="",zoneRenderLayer=null;
+let token='', studentId='', role='', studentHome=null, teacherHome=null, studentMap=null,teacherMap=null,studentCircle=null,teacherCircle=null,zonePoints=[],studentMarker=null,teacherMarker=null,selectedSession=null,zoneDrawing=false,zoneVertices=[],cameraStream=null,photoDataUrl=null,liveMap=null,liveFence=null,liveSessionId='',livePolling=false,liveTimer=null,studentTimer=null,studentRefreshing=false;
+const $=id=>document.getElementById(id);
+window.addEventListener('DOMContentLoaded',initWeeklyForm);
+const escapeHtml=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function msg(s,err=false){$('message').textContent=s;$('message').classList.remove('hide');$('message').style.background=err?'#fee2e2':'#e8f1ff';}
+// Set your deployed Apps Script /exec URL here. Do NOT paste passwords or API keys.
+const APPS_SCRIPT_EXEC_URL = 'https://script.google.com/macros/s/AKfycbyeohnvccWovfQeE_hO8JC6B_3xu2RVupLb-ziNblSC3z5NeSIIMLEvioBuqIPWuheCow/exec';
+const ATTENDANCE_RPC_TIMEOUT_MS = 75000;
+const attendancePending = new Map();
+let attendanceCounter = 0;
+function attendanceTrustedOrigin(origin) {
+  try {
+    const u=new URL(origin);
+    return u.protocol==='https:' && (u.hostname==='script.google.com' || u.hostname==='script.googleusercontent.com' || u.hostname.endsWith('.script.googleusercontent.com'));
+  } catch (e) { return false; }
+}
+window.addEventListener('message', event=>{
+  if (!attendanceTrustedOrigin(event.origin)) return;
+  const d=event.data;
+  if (!d || d.channel!=='attendance-v11-rpc' || !attendancePending.has(d.id)) return;
+  const p=attendancePending.get(d.id);
+  attendancePending.delete(d.id); clearTimeout(p.timeout);
+  p.iframe.remove();
+  if (d.ok) p.resolve(d.value);
+  else p.reject(new Error(d.error || 'การเชื่อมต่อไม่สำเร็จ'));
+});
+function api(fn,...args) {
+  return new Promise((resolve,reject)=>{
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:\?.*)?$/.test(APPS_SCRIPT_EXEC_URL)) {
+      reject(new Error('กรุณากำหนด APPS_SCRIPT_EXEC_URL ใน index.html ให้เป็นลิงก์ /exec ที่เผยแพร่แล้ว'));
+      return;
+    }
+    const id='r'+Date.now().toString(36)+'_'+(++attendanceCounter).toString(36)+'_'+Math.random().toString(36).slice(2);
+    const iframe=document.createElement('iframe');
+    iframe.name='attendance_target_'+id;
+    iframe.setAttribute('aria-hidden','true');
+    iframe.style.cssText='position:absolute;width:0;height:0;border:0;visibility:hidden';
+    const form=document.createElement('form');
+    form.method='POST';form.action=APPS_SCRIPT_EXEC_URL;form.target=iframe.name;
+    form.style.display='none';form.acceptCharset='UTF-8';
+    const input=document.createElement('input');input.type='hidden';input.name='rpcData';
+    input.value=JSON.stringify({id,method:fn,args:args});form.appendChild(input);
+    document.body.appendChild(iframe);document.body.appendChild(form);
+    const timeout=setTimeout(()=>{
+      attendancePending.delete(id);iframe.remove();
+      reject(new Error('ไม่ได้รับคำตอบจาก Apps Script โปรดตรวจสิทธิ์ Anyone, URL /exec และการตั้งค่าเบราว์เซอร์'));
+    },ATTENDANCE_RPC_TIMEOUT_MS);
+    attendancePending.set(id,{resolve,reject,iframe,timeout});
+    try {form.submit();} catch(err) {clearTimeout(timeout);attendancePending.delete(id);iframe.remove();reject(err);} finally {form.remove();}
+  });
+}
 
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ระบบเช็คชื่อ ZONE V11</title>
-</head>
-<body>
-  <h2>ระบบเช็คชื่อด้วยภาพถ่าย ZONE V11</h2>
-  <p>GitHub Pages ทำงานสำเร็จ</p>
-</body>
-</html>
+// Refresh open sessions from server every 15 seconds; no client-only trust.
+async function loadStudentHome(){
+  if(role!=='student'||!studentId||studentRefreshing)return;
+  studentRefreshing=true;
+  try{
+    const data=await api('getStudentHomeById',studentId);
+    studentHome=data;
+    const sel=$('studentSession'),prior=selectedSession?.sessionId||sel.value;
+    const list=data.sessions||[];
+    sel.innerHTML=list.map(s=>'<option value="'+escapeHtml(s.sessionId)+'">'+escapeHtml(s.title)+' • '+escapeHtml(s.groupId)+'</option>').join('');
+    if(list.some(s=>s.sessionId===prior))sel.value=prior;
+    const next=list.find(s=>s.sessionId===sel.value);
+    const unchanged=!!(selectedSession&&next&&selectedSession.sessionId===next.sessionId);
+    if(!list.length){
+      selectedSession=null;stopCamera();clearPhoto();
+      sel.disabled=true;
+      $('studentDetails').textContent='ขณะนี้ไม่มีรอบเช็คชื่อที่เปิดอยู่สำหรับห้องของคุณ';
+      $('gpsStatus').textContent='ระบบจะแสดงรอบโดยอัตโนมัติเมื่อถึงเวลาเปิดเช็คชื่อ';
+      $('checkBtn').disabled=true;
+      return;
+    }
+    sel.disabled=false;
+    if(unchanged){
+      selectedSession=next;
+      updateCheckButton(); // keep captured photo/camera when only refreshing the list
+    }else{
+      selectStudentSession();
+    }
+  }catch(e){msg('โหลดรอบเช็คชื่อไม่สำเร็จ: '+e.message,true)}
+  finally{studentRefreshing=false;}
+}
+function startStudentRefresh(){
+  if(studentTimer)clearInterval(studentTimer);
+  studentTimer=setInterval(()=>{
+    if(role==='student'&&!$('studentView').classList.contains('hide'))loadStudentHome();
+  },15000);
+}
+function toggleLoginFields(){const t=$('role').value==='teacher';$('passwordLabel').classList.toggle('hide',!t);$('userLabel').firstChild.textContent=t?'ชื่อผู้ใช้ครู':'รหัสนักเรียน';$('signInBtn').textContent=t?'เข้าสู่ระบบครู':'ตรวจสอบรหัสนักเรียน';}
+async function signIn(){try{role=$('role').value;if(role==='student'){studentId=$('userId').value.trim();studentHome=await api('getStudentHomeById',studentId);token='';$('welcome').textContent='สวัสดี '+studentHome.name;}else{const data=await api('login','teacher',$('userId').value,$('password').value);token=data.token;$('welcome').textContent='สวัสดี '+data.name;}$('loginCard').classList.add('hide');$('app').classList.remove('hide');$('message').classList.add('hide');$('studentView').classList.toggle('hide',role!=='student');$('teacherView').classList.toggle('hide',role!=='teacher');if(role==='student'){await loadStudentHome();startStudentRefresh();}else{await loadTeacherHome();}}catch(e){msg(e.message,true)}}
+async function signOut(){if(studentTimer){clearInterval(studentTimer);studentTimer=null;}stopCamera();clearPhoto();try{await api('logout',token)}catch(e){} token='';location.reload();}
+function makeMap(id,lat,lng,zoom){
+  const map=L.map(id).setView([lat,lng],zoom);
+  const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+    maxZoom:19,
+    maxNativeZoom:18,
+    attribution:'Imagery &copy; Esri, Vantor, Earthstar Geographics, and the GIS User Community'
+  });
+  const streets=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'
+  });
+  satellite.addTo(map);
+  L.control.layers({'ภาพถ่ายดาวเทียม':satellite,'แผนที่ถนน':streets},null,{position:'topright',collapsed:false}).addTo(map);
+  return map;
+}
+/** Reusable visual style for all zone polygons (teacher/student/display). */
+function fenceStyle(){
+ return {color:'#2563eb',weight:3,opacity:1,dashArray:'8 5',fillColor:'#3b82f6',fillOpacity:0.23};
+}
+/** Render a saved polygon/rectangle, keeping legacy circle sessions compatible. */
+function mapZone(map,s){
+ const points=Array.isArray(s.zonePoints)?s.zonePoints:[];
+ const valid=points.length>=3 && points.every(p=>Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1])));
+ if(valid){
+  return L.polygon(points.map(p=>[Number(p[0]),Number(p[1])]),{...fenceStyle(),interactive:false}).addTo(map);
+ }
+ const lat=Number(s.latitude),lng=Number(s.longitude),radius=Number(s.radiusMeters);
+ if(Number.isFinite(lat)&&Number.isFinite(lng)){
+  return L.circle([lat,lng],{...fenceStyle(),radius:Number.isFinite(radius)&&radius>0?radius:15,interactive:false}).addTo(map);
+ }
+ throw new Error('ไม่พบพิกัดหรือโซนที่บันทึกไว้');
+}
+function selectStudentSession(){
+ selectedSession=studentHome.sessions.find(s=>s.sessionId===$('studentSession').value);
+ stopCamera();clearPhoto();if(!selectedSession)return;
+ const s=selectedSession,now=Date.now(),open=now>=Date.parse(s.startsAt)&&now<Date.parse(s.endsAt);
+ $('studentDetails').innerHTML='<b>'+escapeHtml(s.title)+'</b><br>ห้อง '+escapeHtml(s.groupId)+'<br>เวลา '+escapeHtml(s.startsAt.replace('T',' ').slice(0,16))+' ถึง '+escapeHtml(s.endsAt.replace('T',' ').slice(0,16))+'<br>โซนที่แสดงเป็นพื้นที่อ้างอิงเท่านั้น (ไม่ตรวจ GPS)<br>สถานะ: '+(s.checked?'เช็คชื่อแล้ว':open?'เปิดให้เช็คชื่อ':'ยังไม่เปิดหรือปิดแล้ว');
+ $('gpsStatus').textContent='แผนที่แสดงพื้นที่ที่ครูกำหนดเท่านั้น ไม่มีการระบุพิกัดของนักเรียน';
+ if(!studentMap)studentMap=makeMap('studentMap',s.latitude,s.longitude,17);
+ if(studentCircle)studentMap.removeLayer(studentCircle);
+ studentCircle=mapZone(studentMap,s);studentMap.fitBounds(studentCircle.getBounds().pad(.25));
+ setTimeout(()=>studentMap.invalidateSize(),100);updateCheckButton();
+}
+function updateCheckButton(){
+ const s=selectedSession,now=Date.now();
+ $('checkBtn').disabled=!(photoDataUrl&&s&&!s.checked&&now>=Date.parse(s.startsAt)&&now<Date.parse(s.endsAt));
+}
+
+function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}$('cameraView').srcObject=null;$('cameraView').classList.add('hide');$('snapBtn').classList.add('hide');}
+function clearPhoto(){photoDataUrl=null;$('photoPreview').src='';$('photoPreview').classList.add('hide');$('retakeBtn').classList.add('hide');$('photoStatus').textContent='ยังไม่ได้ถ่ายภาพ';updateCheckButton();}
+async function startCamera(){try{stopCamera();clearPhoto();if(!navigator.mediaDevices?.getUserMedia)throw new Error('เบราว์เซอร์ไม่รองรับกล้อง กรุณาเปิดผ่าน HTTPS');cameraStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:640},height:{ideal:480}}});$('cameraView').srcObject=cameraStream;$('cameraView').classList.remove('hide');await $('cameraView').play();$('snapBtn').classList.remove('hide');$('photoStatus').textContent='พร้อมถ่ายภาพ';}catch(e){msg('เปิดกล้องไม่สำเร็จ: '+e.message,true);stopCamera();}}
+function snapPhoto(){const v=$('cameraView');if(!cameraStream||!v.videoWidth){msg('กล้องยังไม่พร้อม',true);return;}const c=$('cameraCanvas');const w=240,h=Math.round(v.videoHeight*240/v.videoWidth);c.width=w;c.height=h;c.getContext('2d').drawImage(v,0,0,w,h);photoDataUrl=c.toDataURL('image/jpeg',0.52);c.width=0;c.height=0;stopCamera();$('photoPreview').src=photoDataUrl;$('photoPreview').classList.remove('hide');$('retakeBtn').classList.remove('hide');$('photoStatus').textContent='ถ่ายภาพแล้ว • เมื่อกดยืนยันระบบจะบันทึกภาพลง Drive';updateCheckButton();}
+async function submitCheckIn(){
+ if(!selectedSession||!photoDataUrl)return;
+ const photo=photoDataUrl;
+ try{
+  $('checkBtn').disabled=true;
+  const result=await api('checkInById',studentId,selectedSession.sessionId,photo);
+  clearPhoto();msg('เช็คชื่อสำเร็จ: '+(result.status==='LATE'?'มาสาย':'มาเรียน')+' • บันทึกภาพลง Drive แล้ว');
+  await loadStudentHome();
+ }catch(e){msg(e.message,true);updateCheckButton();}
+}
+
+async function loadTeacherHome(){try{
+ teacherHome=await api('getTeacherHome',token);renderWeeklyList();const group=$('group'),prior=group.value;
+ group.innerHTML=teacherHome.groups.map(g=>'<option value="'+escapeHtml(g)+'">'+escapeHtml(g)+'</option>').join('');if(teacherHome.groups.includes(prior))group.value=prior;refreshCourses();
+ const report=$('reportSession'),old=report.value;report.innerHTML=teacherHome.sessions.map(s=>'<option value="'+escapeHtml(s.sessionId)+'">'+escapeHtml(s.title)+' • '+escapeHtml(s.groupId)+'</option>').join('');if(teacherHome.sessions.some(s=>s.sessionId===old))report.value=old;
+ if(!teacherMap){teacherMap=makeMap('teacherMap',13.7563,100.5018,6);teacherMap.on('click',e=>{if(zoneDrawing)addZonePoint(e.latlng.lat,e.latlng.lng);});teacherMap.doubleClickZoom.disable();}
+ setTimeout(()=>teacherMap.invalidateSize(),100);updateZoneHelp();if(teacherHome.sessions.length)loadReport();
+ }catch(e){msg(e.message,true)}}
+function refreshCourses(){const type=$('type').value,group=$('group').value;$('courseWrap').classList.toggle('hide',type!=='CLASS');$('course').innerHTML=(teacherHome?.courses||[]).filter(c=>c.groupId===group).map(c=>'<option value="'+escapeHtml(c.courseId)+'">'+escapeHtml(c.courseId+' • '+c.title)+'</option>').join('');}
+function toggleZoneDrawing(){
+ zoneDrawing=!zoneDrawing;
+ const btn=$('drawZoneBtn');btn.textContent=zoneDrawing?'หยุดวาดโซน':'เริ่มวาดโซน';
+ btn.style.background=zoneDrawing?'#15803d':'';
+ if(teacherMap){teacherMap.getContainer().style.cursor=zoneDrawing?'crosshair':'';teacherMap.invalidateSize();}
+ updateZoneHelp();
+}
+function updateZoneHelp(){
+ const required=$('zoneType').value==='RECTANGLE'?'2 มุม':'อย่างน้อย 3 มุม';
+ $('zoneHelp').textContent='ZONE V11 • เลือกแล้ว '+zonePoints.length+' จุด / '+required+' • '+(zoneDrawing?'แตะบนแผนที่เพื่อกำหนดจุด':'กด “เริ่มวาดโซน” เพื่อเพิ่มจุด')+(zoneDrawingError?' • ERROR: '+zoneDrawingError:'');
+ $('zoneHelp').style.background=zoneDrawingError?'#fee2e2':zonePoints.length>=3?'#dcfce7':'#f8fafc';
+}
+function zoneTypeChanged(){clearZone();updateZoneHelp();}
+function addZonePoint(lat,lng){
+ if(!zoneDrawing)return;
+ if($('zoneType').value==='RECTANGLE'&&zonePoints.length>=2)zonePoints=[];
+ if(zonePoints.length>=20){zoneDrawingError='จุดครบ 20 จุด';updateZoneHelp();return;}
+ if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+ zonePoints.push([lat,lng]);
+ drawTeacherZone();
+}
+function clearZoneVertices(){
+ if(teacherMap)zoneVertices.forEach(layer=>{try{teacherMap.removeLayer(layer)}catch(e){}});
+ zoneVertices=[];
+}
+function drawTeacherZone(){
+ if(!teacherMap)return;
+ zoneDrawingError='';
+ try{
+  const type=$('zoneType').value;
+  const p=zonePoints.map(a=>[Number(a[0]),Number(a[1])]);
+  let poly=p;
+  if(type==='RECTANGLE'&&p.length===2){const a=p[0],b=p[1];poly=[[a[0],a[1]],[a[0],b[1]],[b[0],b[1]],[b[0],a[1]]];}
+  // Build the replacement before discarding the old layer, to preserve selected points on failure.
+  const fresh=L.layerGroup();
+  if(poly.length>=3){L.polygon(poly,{color:'#1565ff',weight:4,opacity:1,dashArray:'10 6',fill:true,fillColor:'#368dff',fillOpacity:0.25,interactive:false}).addTo(fresh);}
+  else if(poly.length===2){L.polyline(poly,{color:'#1565ff',weight:4,dashArray:'10 6',interactive:false}).addTo(fresh);}
+  p.forEach((pt,i)=>{
+   L.circleMarker(pt,{radius:11,color:'#fff',weight:3,fillColor:'#1d4ed8',fillOpacity:1,interactive:false}).addTo(fresh);
+   L.tooltip({permanent:true,direction:'center',className:'zone-number',opacity:1,interactive:false,offset:[0,0]}).setContent(String(i+1)).setLatLng(pt).addTo(fresh);
+  });
+  fresh.addTo(teacherMap);
+  if(zoneRenderLayer)teacherMap.removeLayer(zoneRenderLayer);
+  zoneRenderLayer=fresh;
+  // Remove leftover layers from earlier versions if any.
+  if(teacherCircle){teacherMap.removeLayer(teacherCircle);teacherCircle=null;}
+  if(teacherMarker){teacherMap.removeLayer(teacherMarker);teacherMarker=null;}
+  clearZoneVertices();
+ }catch(e){
+  zoneDrawingError=String(e&&e.message||e);
+  console.error('ZONE V11 render error',e);
+ }
+ updateZoneHelp();
+}
+function undoZonePoint(){if(zonePoints.length)zonePoints.pop();drawTeacherZone();}
+function clearZone(){zonePoints=[];drawTeacherZone();}
+function testZoneDrawing(){
+ if(!teacherMap){zoneDrawingError='แผนที่ยังไม่พร้อม';updateZoneHelp();return;}
+ const center=teacherMap.getCenter(),lat=center.lat,lng=center.lng,step=0.00018;
+ $('zoneType').value='POLYGON';
+ zonePoints=[[lat-step,lng-step],[lat-step,lng+step],[lat+step,lng+step]];
+ zoneDrawing=false;
+ $('drawZoneBtn').textContent='เริ่มวาดโซน';
+ drawTeacherZone();
+ if(!zoneDrawingError)msg('ทดสอบโซน 3 จุดสำเร็จ • ZONE V11 • เพิ่มจุดต่อโดยกดเริ่มวาดโซน');
+}
+
+function finalZonePoints(){
+ if($('zoneType').value==='RECTANGLE'){
+  if(zonePoints.length!==2)throw new Error('แตะ 2 มุมตรงข้ามของโซนก่อน');
+  const a=zonePoints[0],b=zonePoints[1];return [[a[0],a[1]],[a[0],b[1]],[b[0],b[1]],[b[0],a[1]]];
+ }
+ if(zonePoints.length<3)throw new Error('กรุณาแตะขอบโซนอย่างน้อย 3 จุด');return zonePoints;
+}
+function toggleWeekly(){const repeat=$('repeatWeekly').checked;$('weeklyControls').classList.toggle('hide',!repeat);$('saveSessionBtn').textContent=repeat?'บันทึกตารางประจำสัปดาห์':'บันทึกรอบเช็คชื่อ';['start','late','end'].forEach(id=>{$(id).closest('label').classList.toggle('hide',repeat);});}
+function initWeeklyForm(){
+ const days=[['จันทร์',1],['อังคาร',2],['พุธ',3],['พฤหัสบดี',4],['ศุกร์',5],['เสาร์',6],['อาทิตย์',0]];
+ $('weeklyDays').innerHTML=days.map(([name,n])=>'<label style="display:flex;align-items:center;gap:5px;margin-top:6px"><input type="checkbox" class="weeklyDay" value="'+n+'" '+(n>=1&&n<=5?'checked':'')+' style="width:auto;margin:0">'+name+'</label>').join('');
+ const now=new Date(),local=new Date(now.getTime()+7*3600000).toISOString().slice(0,10);
+ const after=new Date(Date.parse(local+'T00:00:00Z')+90*86400000).toISOString().slice(0,10);
+ $('weeklyFrom').value=local;$('weeklyTo').value=after;
+}
+function renderWeeklyList(){
+ const arr=teacherHome?.weeklySchedules||[];
+ $('weeklyList').innerHTML=arr.length?arr.map(s=>{
+ const summary=escapeHtml(s.title)+' · '+escapeHtml(s.groupId)+'<br><span class="muted">'+escapeHtml(String(s.days).split(',').map(d=>({'0':'อา','1':'จ','2':'อ','3':'พ','4':'พฤ','5':'ศ','6':'ส'}[d]||d)).join(' '))+' • '+escapeHtml(s.startTime)+'–'+escapeHtml(s.endTime)+' (สายหลัง '+escapeHtml(s.lateTime)+') • '+escapeHtml(s.startDate)+' ถึง '+escapeHtml(s.endDate)+'</span>';
+ const action='<button class="secondary" type="button" data-schedule="'+escapeHtml(s.scheduleId)+'" data-on="'+(!s.active)+'">'+(s.active?'ปิดตาราง':'เปิดตาราง')+'</button>';
+ return '<div style="padding:8px 0;border-bottom:1px solid #ddd"><b>'+summary+'</b> '+action+'</div>';
+ }).join(''):'ยังไม่มีตารางประจำสัปดาห์';
+ $('weeklyList').querySelectorAll('button[data-schedule]').forEach(button=>button.addEventListener('click',()=>setScheduleEnabled(button.dataset.schedule,button.dataset.on==='true')));
+}
+async function setScheduleEnabled(id,on){try{await api('setWeeklyScheduleActive',token,id,on);msg(on?'เปิดตารางแล้ว':'ปิดตารางแล้ว');await loadTeacherHome();}catch(e){msg(e.message,true)}}
+async function saveSession(){try{
+ const pts=finalZonePoints(),lat=pts.reduce((x,p)=>x+p[0],0)/pts.length,lng=pts.reduce((x,p)=>x+p[1],0)/pts.length;
+ const input={type:$('type').value,groupId:$('group').value,courseId:$('course').value,title:$('title').value,startsAt:$('start').value,lateAfter:$('late').value,endsAt:$('end').value,latitude:lat,longitude:lng,radiusMeters:0,maxAccuracyMeters:$('accuracy').value,zoneType:$('zoneType').value,zonePoints:pts};
+ if($('repeatWeekly').checked){
+  input.days=[...document.querySelectorAll('.weeklyDay:checked')].map(e=>Number(e.value));
+  input.startTime=$('weeklyStart').value;input.lateTime=$('weeklyLate').value;input.endTime=$('weeklyEnd').value;
+  input.startDate=$('weeklyFrom').value;input.endDate=$('weeklyTo').value;
+  await api('createWeeklySchedule',token,input);
+  msg('สร้างตารางเช็คชื่อประจำสัปดาห์สำเร็จ');
+ }else{
+  const result=await api('createSession',token,input);msg('สร้างรอบพร้อมโซนสำเร็จ: '+result.sessionId);
+ }
+ clearZone();await loadTeacherHome();
+ }catch(e){msg(e.message,true)}}
+async function loadReport(){
+ try{
+ const id=$('reportSession').value;if(!id)return;
+ const data=await api('getSessionReport',token,id);
+ const counts={PRESENT:0,LATE:0,ABSENT:0,PENDING:0};data.records.forEach(r=>counts[r.status]++);
+ $('liveCounts').textContent='มาเรียน '+counts.PRESENT+' • สาย '+counts.LATE+' • ขาด '+counts.ABSENT+' • รอ '+counts.PENDING;
+ $('report').innerHTML='<div class="info">มาเรียน '+counts.PRESENT+' • สาย '+counts.LATE+' • ขาด '+counts.ABSENT+' • ยังไม่เช็คชื่อ '+counts.PENDING+'</div><div style="overflow:auto"><table><thead><tr><th>รหัส</th><th>ชื่อ</th><th>สถานะ</th><th>เวลา</th><th>รูปยืนยัน</th></tr></thead><tbody>'+data.records.map(r=>'<tr><td>'+escapeHtml(r.studentId)+'</td><td>'+escapeHtml(r.name)+'</td><td>'+({PRESENT:'มาเรียน',LATE:'สาย',ABSENT:'ขาด',PENDING:'รอเช็คชื่อ'}[r.status])+'</td><td>'+escapeHtml(r.checkedAt.replace('T',' ').slice(0,16))+'</td><td>'+(r.hasPhoto?'<button type="button" data-photo="'+escapeHtml(r.recordId)+'">ดูรูป</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
+ $('report').querySelectorAll('button[data-photo]').forEach(btn=>btn.addEventListener('click',()=>showAttendancePhoto(btn.dataset.photo)));
+ initLiveDashboard(data.session);
+ }catch(e){msg(e.message,true)}
+}
+async function showAttendancePhoto(recordId){
+ try{
+  msg('กำลังโหลดภาพที่บันทึกไว้…');
+  const photo=await api('getAttendancePhoto',token,recordId);
+  $('livePhoto').src=photo;$('livePhoto').classList.remove('hide');$('livePhotoPlaceholder').classList.add('hide');
+  $('liveInfo').textContent='กำลังแสดงภาพที่เลือกจากรายงาน (ครูเท่านั้น)';
+  msg('เปิดภาพย้อนหลังแล้ว');
+ }catch(e){msg(e.message,true)}
+}
+function initLiveDashboard(s){
+ if(!s)return;
+ if(liveSessionId!==s.sessionId){
+  liveSessionId=s.sessionId;liveLastRecordId="";clearLivePreview();
+  if(!liveMap)liveMap=makeMap('liveMap',Number(s.latitude),Number(s.longitude),17);
+  if(liveFence)liveMap.removeLayer(liveFence);
+  liveFence=mapZone(liveMap,s);liveMap.fitBounds(liveFence.getBounds());
+ }
+ setTimeout(()=>liveMap?.invalidateSize(),100);
+ refreshLive();
+ if(!liveTimer)liveTimer=setInterval(()=>{if(role==='teacher'&&!$('teacherView').classList.contains('hide'))refreshLive();},5000);
+}
+function clearLivePreview(){
+ $('liveInfo').textContent='รอการเช็คชื่อ…';
+ $('liveGps').textContent='แสดงพื้นที่อ้างอิง ไม่ใช้ GPS';
+ $('livePhoto').src='';$('livePhoto').classList.add('hide');
+ $('livePhotoPlaceholder').classList.remove('hide');
+ $('livePhotoPlaceholder').textContent='ยังไม่มีภาพล่าสุด • เปิดภาพย้อนหลังจากรายชื่อนักเรียนได้';
+}
+async function refreshLive(){
+ if(livePolling||!liveSessionId||role!=='teacher')return;
+ livePolling=true;
+ const id=liveSessionId;
+ try{
+  const result=await api('getLiveDisplay',token,id);
+  if(id!==liveSessionId)return;
+  const x=result.latest;
+  if(!x)return;
+  $('liveInfo').innerHTML='<b>'+escapeHtml(x.studentName)+'</b><br>รหัส '+escapeHtml(x.studentId)+'<br>'+(x.status==='LATE'?'มาสาย':'มาเรียน')+' • '+escapeHtml(x.checkedAt.replace('T',' ').slice(0,19));
+  $('liveGps').textContent='โซนอ้างอิงตามที่ครูกำหนด • ไม่ตรวจ GPS';
+  if(x.recordId && liveLastRecordId!==x.recordId){
+   liveLastRecordId=x.recordId;
+   const photo=await api('getAttendancePhoto',token,x.recordId);
+   if(id===liveSessionId){$('livePhoto').src=photo;$('livePhoto').classList.remove('hide');$('livePhotoPlaceholder').classList.add('hide');}
+  }
+ }catch(e){$('liveInfo').textContent='โหลดข้อมูลล่าสุดไม่ได้: '+e.message;}
+ finally{livePolling=false;}
+}
+let liveLastRecordId='';
+
+
+// Excel is parsed in the teacher's browser. Only studentId/name/groupId are sent to Apps Script.
+let rosterRecords=[];
+function textCell(v){return String(v??'').trim();}
+function cleanGroup(raw){
+  const s=textCell(raw).replace(/\s+/g,' ');
+  const match=s.match(/ปว[ชส]\.\s*\d+\s*\/\s*\d+/);
+  return match?match[0].replace(/\s/g,''):s;
+}
+async function parseRosterFile(){
+  rosterRecords=[];$('rosterImportBtn').disabled=true;$('rosterCheckBtn').disabled=true;$('rosterPreview').innerHTML='';
+  const file=$('rosterFile').files?.[0];if(!file)return;
+  try{
+    if(file.size>6*1024*1024)throw new Error('ไฟล์ใหญ่เกิน 6 MB');
+    if(typeof XLSX==='undefined')throw new Error('โหลดตัวอ่าน Excel ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต');
+    const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',raw:false,cellText:true,cellDates:false});
+    const issues=[],dup=new Set(),groups={};
+    workbook.SheetNames.forEach(sheetName=>{
+      const lines=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{header:1,defval:'',raw:false});
+      let hdr=-1,studentCol=-1,nameCol=-1,groupCol=-1,format='';
+      for(let i=0;i<Math.min(lines.length,35);i++){
+        const a=(lines[i]||[]).map(x=>textCell(x).replace(/\s/g,'').toLowerCase());
+        if(a.includes('studentid')&&a.includes('name')&&a.includes('groupid')){hdr=i;studentCol=a.indexOf('studentid');nameCol=a.indexOf('name');groupCol=a.indexOf('groupid');format='normalized';break;}
+        if(a.some(x=>x.includes('รหัสประจำตัว'))&&a.some(x=>x.includes('ชื่อ-สกุล'))){hdr=i;studentCol=a.findIndex(x=>x.includes('รหัสประจำตัว'));nameCol=a.findIndex(x=>x.includes('ชื่อ-สกุล'));format='report';break;}
+      }
+      if(hdr<0){issues.push(sheetName+': ไม่พบหัวตารางรายชื่อ');return;}
+      let group='';
+      if(format==='report'){
+        for(let i=0;i<hdr;i++){
+          const a=lines[i]||[];
+          const k=a.findIndex(v=>textCell(v).includes('ชั้นปี'));
+          if(k>=0){group=cleanGroup(a[k+2]||a[k+1]);break;}
+        }
+        if(!group){const m=sheetName.match(/ปวช\.?(\d+)_(\d+)/);if(m)group='ปวช.'+m[1]+'/'+m[2];}
+      }
+      for(let r=hdr+1;r<lines.length;r++){
+        const a=lines[r]||[],studentId=textCell(a[studentCol]),name=textCell(a[nameCol]).replace(/\s+/g,' '),groupId=format==='report'?group:cleanGroup(a[groupCol]);
+        if(!studentId&&!name)continue;
+        if(!/^[0-9A-Za-z_-]{4,30}$/.test(studentId)||!name||!groupId){issues.push(sheetName+' แถว '+(r+1)+': ข้อมูลไม่ครบ/รหัสไม่ถูกต้อง');continue;}
+        if(dup.has(studentId)){issues.push(sheetName+' แถว '+(r+1)+': รหัส '+studentId+' ซ้ำในไฟล์');continue;}
+        dup.add(studentId);rosterRecords.push({studentId,name,groupId});groups[groupId]=(groups[groupId]||0)+1;
+      }
+    });
+    if(issues.length){rosterRecords=[];throw new Error('พบปัญหา '+issues.length+' รายการ:\n'+issues.slice(0,12).join('\n')+'\nกรุณาแก้ไฟล์แล้วเลือกใหม่');}
+    if(!rosterRecords.length)throw new Error('ไม่พบรายชื่อนักเรียนในไฟล์');
+    if(rosterRecords.length>1500)throw new Error('เกิน 1,500 คนต่อครั้ง');
+    $('rosterSummary').textContent='อ่านได้ '+rosterRecords.length+' คน จาก '+workbook.SheetNames.length+' ชีต | '+Object.entries(groups).map(([g,n])=>g+' '+n+' คน').join(' • ');
+    $('rosterPreview').innerHTML='<table><thead><tr><th>รหัสนักเรียน</th><th>ชื่อ–สกุล</th><th>ห้อง</th></tr></thead><tbody>'+rosterRecords.slice(0,25).map(r=>'<tr><td>'+escapeHtml(r.studentId)+'</td><td>'+escapeHtml(r.name)+'</td><td>'+escapeHtml(r.groupId)+'</td></tr>').join('')+'</tbody></table>'+(rosterRecords.length>25?'<p class="muted">แสดงตัวอย่าง 25 คนแรก</p>':'');
+    $('rosterCheckBtn').disabled=false;msg('อ่าน Excel สำเร็จ กรุณากดตรวจสอบกับฐานข้อมูลก่อนนำเข้า');
+  }catch(e){$('rosterSummary').textContent=e.message;msg(e.message,true);}
+}
+async function checkRosterImport(){
+ try{$('rosterImportBtn').disabled=true;const r=await api('importStudentsPreview',token,rosterRecords);
+  $('rosterSummary').textContent='ทั้งหมด '+r.count+' คน • ใหม่ '+r.additions+' • มีอยู่แล้ว (ข้อมูลตรง) '+r.unchanged+' • รหัสเดิมแต่ข้อมูลต่าง '+r.changes+' | '+Object.entries(r.groups).map(([g,n])=>g+': '+n).join(' • ');
+  $('rosterImportBtn').disabled=false;msg('ตรวจสอบสำเร็จ เลือกตัวเลือกอัปเดตตามต้องการ แล้วกดยืนยันนำเข้า');
+ }catch(e){msg(e.message,true);}
+}
+async function commitRosterImport(){
+ if(!rosterRecords.length||!token)return;
+ const update=$('rosterUpdate').checked;
+ if(!confirm('ยืนยันนำเข้ารายชื่อ '+rosterRecords.length+' คน? '+(update?'รหัสเดิมที่มีข้อมูลต่างจะถูกอัปเดตชื่อ/ห้อง':'รหัสเดิมจะถูกข้ามทั้งหมด')))return;
+ const b=$('rosterImportBtn');b.disabled=true;
+ try{const r=await api('importStudentsCommit',token,rosterRecords,update);
+  msg('นำเข้าสำเร็จ: เพิ่ม '+r.added+' คน • อัปเดต '+r.updated+' คน • ข้าม '+r.skipped+' คน');
+  $('rosterSummary').textContent='ผลการนำเข้า: เพิ่ม '+r.added+' • อัปเดต '+r.updated+' • ข้าม '+r.skipped;
+  rosterRecords=[];$('rosterCheckBtn').disabled=true;await loadTeacherHome();
+ }catch(e){msg(e.message,true);b.disabled=false;}
+}
+
+</script></body></html>
