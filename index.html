@@ -5,12 +5,16 @@
 <style>
 *{box-sizing:border-box}body{font-family:system-ui,'Noto Sans Thai',sans-serif;background:#f1f5f9;color:#172033;margin:0}header{background:#153c72;color:#fff;padding:18px 22px}header h2{margin:0;font-size:21px}header small{opacity:.85}.wrap{max-width:1050px;margin:20px auto;padding:0 14px}.card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 3px 16px #0f172a12}h3{margin:0 0 14px}label{display:block;margin-top:12px;font-weight:600;font-size:14px}input,select,button{font:inherit}input,select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;margin-top:5px;background:#fff}button{background:#1565c0;color:white;border:0;border-radius:10px;padding:10px 17px;cursor:pointer;margin-top:12px}button:disabled{background:#94a3b8;cursor:not-allowed}.secondary{background:#475569}.danger{color:#b91c1c}.ok{color:#16784b}.muted{color:#64748b;font-size:13px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.zone-number{background:transparent;border:0;box-shadow:none;color:#fff;font-weight:800;font-size:14px;padding:0;pointer-events:none}.zone-number:before{display:none}.map{width:100%;height:350px;border-radius:12px;margin-top:12px;border:1px solid #cbd5e1}.pill{padding:6px 10px;border-radius:50px;background:#e2e8f0;font-size:13px}.hide{display:none!important}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:13px}.msg{padding:10px 12px;border-radius:10px;background:#e8f1ff;margin-bottom:14px;white-space:pre-wrap}.info{padding:10px;background:#f8fafc;border-radius:10px;margin-top:10px}.display-grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:12px;margin-top:14px}.display-panel{min-width:0;background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:12px}.display-panel .map{height:290px;margin-top:8px}.photo-live{width:100%;max-height:280px;aspect-ratio:4/3;object-fit:contain;background:#e2e8f0;border-radius:10px}.foot{font-size:12px;color:#64748b;margin:20px 0}@media(max-width:850px){.display-grid{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.map{height:300px}}
 </style></head><body>
-<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V12.6 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
+<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V12.7 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
 <div class="wrap">
 <div id="message" class="msg hide"></div>
 <section id="loginCard" class="card"><h3>เริ่มใช้งาน</h3><label>เลือกประเภทผู้ใช้<select id="role" onchange="toggleLoginFields()"><option value="student">นักเรียน (ไม่ต้องล็อกอิน)</option><option value="teacher">ครูผู้สอน</option></select></label><label id="userLabel">รหัสนักเรียน<input id="userId" autocomplete="off" placeholder="กรอกรหัสนักเรียน"></label><label id="passwordLabel" class="hide">รหัสผ่านครู<input id="password" type="password" autocomplete="current-password"></label><button onclick="signIn()" id="signInBtn">ตรวจสอบรหัสนักเรียน</button><p class="muted">การกรอกรหัสนักเรียนเพียงอย่างเดียวไม่สามารถยืนยันเจ้าของรหัสได้</p></section>
 <section id="app" class="hide"><div class="row" style="justify-content:space-between;margin-bottom:15px"><b id="welcome"></b><button class="secondary" onclick="signOut()">ออกจากระบบ</button></div>
-<div id="studentView" class="hide"><section class="card"><h3>เลือกการเช็คชื่อ</h3><label>รอบเช็คชื่อ<select id="studentSession" onchange="selectStudentSession()"></select></label><div class="row"><button type="button" class="secondary" id="refreshStudentBtn" onclick="refreshStudentNow()">รีเฟรชรอบและเวลา</button><span id="studentUpdatedAt" class="muted" role="status" aria-live="polite"></span></div><div id="studentDetails" class="info"></div><div id="studentMap" class="map"></div><div id="gpsStatus" class="info">พื้นที่สีฟ้าเป็นเขตอ้างอิงที่ครูกำหนด • ไม่มีการเก็บหรือตรวจพิกัดโทรศัพท์</div><section class="info"><b>📷 ถ่ายภาพเพื่อบันทึกหลักฐานเช็คชื่อ</b><p class="muted">เมื่อถ่ายภาพและยืนยัน ระบบจะบันทึกไฟล์ภาพลง Google Drive ส่วนตัวของผู้ดูแล เพื่อให้ครูตรวจย้อนหลังได้ ภาพไม่ใช่การตรวจใบหน้าอัตโนมัติ</p><video id="cameraView" autoplay playsinline muted class="hide" style="width:100%;max-width:340px;border-radius:10px;background:#111"></video><canvas id="cameraCanvas" class="hide"></canvas><img id="photoPreview" class="hide" alt="ตัวอย่างภาพที่ถ่าย" style="width:100%;max-width:340px;border-radius:10px"><div class="row"><button id="cameraBtn" type="button" onclick="startCamera()">เปิดกล้องหน้า</button><button id="snapBtn" class="hide" type="button" onclick="snapPhoto()">ถ่ายภาพยืนยัน</button><button id="retakeBtn" class="hide secondary" type="button" onclick="startCamera()">ถ่ายใหม่</button></div><p id="photoStatus" class="muted">ยังไม่ได้ถ่ายภาพ</p></section><div class="row"><button id="checkBtn" onclick="submitCheckIn()" disabled>ยืนยันเช็คชื่อ</button><p id="checkReason" class="muted" role="status" aria-live="polite">กรุณาเลือกรอบเช็คชื่อและถ่ายภาพ</p></div><p class="muted">ระบบไม่ขอสิทธิ์เข้าถึงตำแหน่งและไม่ตรวจสอบ GPS • ภาพจัดเก็บใน Drive ส่วนตัวของเจ้าของระบบ</p></section></div>
+<div id="studentView" class="hide"><section class="card"><h3>เลือกการเช็คชื่อ</h3><label>รอบเช็คชื่อ<select id="studentSession" onchange="selectStudentSession()"></select></label><div class="row"><button type="button" class="secondary" id="refreshStudentBtn" onclick="refreshStudentNow()">รีเฟรชรอบและเวลา</button><span id="studentUpdatedAt" class="muted" role="status" aria-live="polite"></span></div><div id="studentDetails" class="info"></div><div id="studentMap" class="map"></div><div id="gpsStatus" class="info">พื้นที่สีฟ้าเป็นโซนแสดงผลเท่านั้น ไม่ใช้ตัดสินสิทธิ์ GPS</div><section class="info" id="campusGpsCheck"><b>📍 ตรวจ GPS — ต้องอยู่ภายในวิทยาลัย</b>
+<p class="muted">ขอพิกัดเมื่อกดปุ่มเท่านั้น ไม่แสดงขอบเขต GPS บนแผนที่นักเรียน และไม่เก็บค่าพิกัดลงชีต ระบบตรวจตำแหน่งใหม่อีกครั้งเมื่อกดยืนยัน</p>
+<button type="button" id="gpsCheckBtn" onclick="checkCampusGpsNow()">ตรวจตำแหน่ง GPS</button>
+<p id="campusGpsStatus" class="muted" role="status">ยังไม่ได้ตรวจพิกัด GPS</p></section>
+<section class="info"><b>📷 ถ่ายภาพเพื่อบันทึกหลักฐานเช็คชื่อ</b><p class="muted">เมื่อถ่ายภาพและยืนยัน ระบบจะบันทึกไฟล์ภาพลง Google Drive ส่วนตัวของผู้ดูแล เพื่อให้ครูตรวจย้อนหลังได้ ภาพไม่ใช่การตรวจใบหน้าอัตโนมัติ</p><video id="cameraView" autoplay playsinline muted class="hide" style="width:100%;max-width:340px;border-radius:10px;background:#111"></video><canvas id="cameraCanvas" class="hide"></canvas><img id="photoPreview" class="hide" alt="ตัวอย่างภาพที่ถ่าย" style="width:100%;max-width:340px;border-radius:10px"><div class="row"><button id="cameraBtn" type="button" onclick="startCamera()">เปิดกล้องหน้า</button><button id="snapBtn" class="hide" type="button" onclick="snapPhoto()">ถ่ายภาพยืนยัน</button><button id="retakeBtn" class="hide secondary" type="button" onclick="startCamera()">ถ่ายใหม่</button></div><p id="photoStatus" class="muted">ยังไม่ได้ถ่ายภาพ</p></section><div class="row"><button id="checkBtn" onclick="submitCheckIn()" disabled>ยืนยันเช็คชื่อ</button><p id="checkReason" class="muted" role="status" aria-live="polite">กรุณาเลือกรอบเช็คชื่อและถ่ายภาพ</p></div><p class="muted">ระบบขอ GPS เฉพาะเมื่อเช็คชื่อ เพื่อดูว่าอยู่ภายในวิทยาลัย • ไม่เก็บพิกัดลงชีต • ภาพจัดเก็บใน Drive ส่วนตัว</p></section></div>
 <div id="teacherView" class="hide"><section class="card"><h3>ครู: สร้างรอบเช็คชื่อและกำหนดขอบเขต</h3><div class="grid"><div><label>ประเภท<select id="type" onchange="refreshCourses()"><option value="ASSEMBLY">เข้าแถวตอนเช้า</option><option value="CLASS">เข้าเรียนรายวิชา</option></select></label><label>ห้องเรียน<select id="group" onchange="refreshCourses()"></select></label><label id="courseWrap">รายวิชา<select id="course"></select></label><label>ชื่อรอบ<input id="title" placeholder="เช่น เข้าแถวประจำวันที่ 6 พ.ย."></label><label>เริ่มเช็คชื่อ<input type="datetime-local" id="start"></label><label>สิ้นสุดเวลาไม่สาย<input type="datetime-local" id="late"></label><label>ปิดเช็คชื่อ<input type="datetime-local" id="end"></label></div><div><label>รูปแบบโซน<select id="zoneType" onchange="zoneTypeChanged()"><option value="RECTANGLE">โซนสี่เหลี่ยม (แตะ 2 มุม)</option><option value="POLYGON">โซนอิสระ (แตะอย่างน้อย 3 มุม)</option></select></label><input id="accuracy" type="hidden" value="15"><div class="row"><button type="button" id="drawZoneBtn" onclick="toggleZoneDrawing()">เริ่มวาดโซน</button><button type="button" class="secondary" onclick="undoZonePoint()">ย้อนกลับ 1 จุด</button><button type="button" class="secondary" onclick="clearZone()">ล้างโซน</button><button type="button" class="secondary" onclick="testZoneDrawing()">ทดสอบ 3 จุด</button></div><div id="zoneHelp" class="info" role="status" aria-live="polite">กดเริ่มวาดโซน จากนั้นแตะมุมบนแผนที่</div><p class="muted">สีฟ้าคือพื้นที่อ้างอิงเท่านั้น ไม่มีการตรวจ GPS หรือพิกัดนักเรียน</p></div></div><div id="teacherMap" class="map"></div>
 <div class="info" style="margin-top:12px"><label style="display:flex;align-items:center;gap:10px"><input type="checkbox" id="repeatWeekly" onchange="toggleWeekly()" style="width:auto;margin:0">ตั้งเวลาแบบประจำสัปดาห์ (จันทร์–อาทิตย์)</label>
 <div id="weeklyControls" class="hide">
@@ -21,6 +25,14 @@
 </div></div>
 <button id="saveSessionBtn" onclick="saveSession()">บันทึกรอบเช็คชื่อ</button>
 <div class="info" style="margin-top:16px"><b>ตารางเช็คชื่อประจำสัปดาห์</b><div id="weeklyList" style="margin-top:8px">ยังไม่มีตาราง</div></div></section>
+<section class="card" id="campusGpsEditor"><h3>🟢 โซนตรวจ GPS — ขอบเขตวิทยาลัย (ครูเท่านั้น)</h3>
+<p class="muted">โซนนี้แยกจากโซนสีฟ้าของโดม/ห้องเรียน นักเรียนยังเห็นเฉพาะโซนสีฟ้า ส่วนโซนนี้ใช้ตรวจตำแหน่งตอนเช็คชื่อเท่านั้น</p>
+<label>ชื่อพื้นที่<input id="campusZoneName" value="เขตวิทยาลัย" maxlength="70"></label>
+<label>ความแม่นยำ GPS สูงสุด (เมตร)<input id="campusMaxAccuracy" type="number" min="10" max="100" value="40"></label>
+<div class="row"><button type="button" onclick="campusStartDraw()" id="campusDrawBtn">เริ่มวาดขอบเขตวิทยาลัย</button><button class="secondary" type="button" onclick="campusUndoPoint()">ย้อนกลับจุด</button><button class="secondary" type="button" onclick="campusClearPoints()">ล้างจุด</button></div>
+<div id="campusMap" class="map" style="height:360px"></div><p class="muted">คลิกตามแนวขอบเขตจริงอย่างน้อย 3 จุด แล้วกดบันทึก ไม่ต้องใส่พิกัดจำลอง • บันทึกแทนโซน GPS เดิมเท่านั้น</p>
+<button type="button" onclick="saveCampusZoneFromUI()" id="campusSaveBtn">บันทึกโซนตรวจ GPS</button>
+<div class="info" id="campusZoneStatus" role="status">ยังไม่ได้โหลดโซนวิทยาลัย</div></section>
 <section class="card" id="timeEditor"><h3>⏰ แก้ไขเวลาเช็คชื่อ (ครู)</h3>
 <p class="muted">เลือกแก้เฉพาะรอบรายวัน หรือเปลี่ยนเวลาของตารางประจำสัปดาห์ พร้อมอัปเดตรอบอนาคตที่ยังไม่เริ่ม • ข้อมูลเช็คชื่อและรูปภาพเดิมไม่ถูกลบ</p>
 <label>รูปแบบการแก้ไข<select id="timeEditMode" onchange="timeEditModeChanged()"><option value="session">เฉพาะรอบรายวัน (Sessions)</option><option value="weekly">ทุกสัปดาห์ (WeeklySchedules)</option></select></label>
@@ -51,6 +63,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script>
 let zoneDrawingError="",zoneRenderLayer=null;
+let campusMap=null,campusLayer=null,campusPoints=[],campusDrawing=false,gpsFixV127=null,gpsBusyV127=false;
 let token='', studentId='', role='', studentHome=null, teacherHome=null, studentMap=null,teacherMap=null,studentCircle=null,teacherCircle=null,zonePoints=[],studentMarker=null,teacherMarker=null,selectedSession=null,zoneDrawing=false,zoneVertices=[],cameraStream=null,photoDataUrl=null,liveMap=null,liveFence=null,liveSessionId='',livePolling=false,liveTimer=null,studentTimer=null,studentRefreshing=false;
 const $=id=>document.getElementById(id);
 window.addEventListener('DOMContentLoaded',initWeeklyForm);
@@ -189,10 +202,10 @@ function renderStudentSessionDetails(s){
 }
 function selectStudentSession(){
  selectedSession=studentHome.sessions.find(s=>s.sessionId===$('studentSession').value);
- stopCamera();clearPhoto();if(!selectedSession)return;
+ stopCamera();clearPhoto();gpsFixV127=null;updateCampusGpsStatusV127();if(!selectedSession)return;
  const s=selectedSession;
  renderStudentSessionDetails(s);
- $('gpsStatus').textContent='แผนที่แสดงพื้นที่ที่ครูกำหนดเท่านั้น ไม่มีการระบุพิกัดของนักเรียน';
+ $('gpsStatus').textContent='แผนที่แสดงพื้นที่ที่ครูกำหนดเท่านั้น ไม่แสดงขอบเขตตรวจ GPS หรือพิกัดนักเรียน';
  if(!studentMap)studentMap=makeMap('studentMap',s.latitude,s.longitude,17);
  if(studentCircle)studentMap.removeLayer(studentCircle);
  studentCircle=mapZone(studentMap,s);studentMap.fitBounds(studentCircle.getBounds().pad(.25));
@@ -205,6 +218,8 @@ function updateCheckButton(){
  const reason=!s?'ไม่มีรอบที่กำลังเปิดสำหรับนักเรียนคนนี้':
    s.checked?'รอบนี้เช็คชื่อแล้ว':
    !photoDataUrl?'กรุณาถ่ายภาพก่อนยืนยัน':
+   !gpsFixV127?'กรุณากดตรวจ GPS ก่อนยืนยัน':
+   Date.now()-gpsFixV127.timestamp>30000?'พิกัด GPS หมดอายุ กรุณาตรวจใหม่':
    '';
  $('checkBtn').disabled=!!reason;
  $('checkReason').textContent=reason||'พร้อมยืนยันเช็คชื่อ (ระบบจะตรวจเวลาจากเซิร์ฟเวอร์อีกครั้ง)';
@@ -222,7 +237,8 @@ async function submitCheckIn(){
  try{
   $('checkBtn').disabled=true;
   $('checkReason').textContent='กำลังบันทึกข้อมูลและภาพถ่าย กรุณาอย่ากดซ้ำหรือปิดหน้า';
-  const result=await api('checkInById',studentId,selectedSession.sessionId,photo);
+  const currentFix=await acquireCampusGpsV127(); // refresh geolocation just before submission
+  const result=await api('checkInById',studentId,selectedSession.sessionId,photo,currentFix);
   // The server confirms Drive + Sheets before returning. No second blocking request.
   if(selectedSession)selectedSession.checked=true;
   if(studentHome?.sessions){
@@ -238,7 +254,7 @@ async function submitCheckIn(){
 }
 
 async function loadTeacherHome(){try{
- teacherHome=await api('getTeacherHome',token);renderWeeklyList();renderTimeEditTargets();const group=$('group'),prior=group.value;
+ teacherHome=await api('getTeacherHome',token);loadCampusZoneFromServer();renderWeeklyList();renderTimeEditTargets();const group=$('group'),prior=group.value;
  group.innerHTML=teacherHome.groups.map(g=>'<option value="'+escapeHtml(g)+'">'+escapeHtml(g)+'</option>').join('');if(teacherHome.groups.includes(prior))group.value=prior;refreshCourses();
  const report=$('reportSession'),old=report.value;report.innerHTML=teacherHome.sessions.map(s=>'<option value="'+escapeHtml(s.sessionId)+'">'+escapeHtml(s.title)+' • '+escapeHtml(s.groupId)+'</option>').join('');if(teacherHome.sessions.some(s=>s.sessionId===old))report.value=old;
  if(!teacherMap){teacherMap=makeMap('teacherMap',13.7563,100.5018,6);teacherMap.on('click',e=>{if(zoneDrawing)addZonePoint(e.latlng.lat,e.latlng.lng);});teacherMap.doubleClickZoom.disable();}
@@ -551,4 +567,88 @@ async function saveTimeEdit() {
   }catch(err){msg('แก้ไขเวลาไม่สำเร็จ: '+err.message,true);$('timeEditStatus').textContent=err.message;}
   finally{btn.disabled=false;}
 }
+
+// V12.7 campus zone is a separate teacher-only polygon. Student map remains blue zone only.
+async function loadCampusZoneFromServer(){
+ try{
+  const zone=await api('getCampusZoneV127',token);
+  if(!campusMap){
+   const sample=(teacherHome?.sessions||[]).find(x=>Number.isFinite(Number(x.latitude))&&Number.isFinite(Number(x.longitude))&&Number(x.latitude)>0&&Number(x.longitude)>0);
+   const fallback=sample?{lat:Number(sample.latitude),lng:Number(sample.longitude)}:{lat:12.7,lng:101.3};
+   campusMap=makeMap('campusMap',fallback.lat,fallback.lng,16);
+   campusMap.on('click',e=>{
+    if(!campusDrawing||campusPoints.length>=20)return;
+    campusPoints.push([e.latlng.lat,e.latlng.lng]);drawCampusV127();
+   });
+  }
+  if(zone.configured){
+   campusPoints=zone.points.map(p=>[Number(p[0]),Number(p[1])]);
+   $('campusZoneName').value=zone.name;
+   $('campusMaxAccuracy').value=zone.maxAccuracyMeters;
+   $('campusZoneStatus').textContent='โหลดโซนตรวจ GPS แล้ว ('+campusPoints.length+' จุด)';
+  }else{
+   $('campusZoneStatus').textContent='ยังไม่ได้กำหนดเขตวิทยาลัย — นักเรียนยังเช็คชื่อไม่ได้จนกว่าจะบันทึกโซน';
+  }
+  drawCampusV127();
+  setTimeout(()=>campusMap.invalidateSize(),120);
+ }catch(e){$('campusZoneStatus').textContent='โหลดโซนไม่ได้: '+e.message;}
+}
+function drawCampusV127(){
+ if(!campusMap)return;
+ if(campusLayer)campusMap.removeLayer(campusLayer);
+ campusLayer=L.layerGroup().addTo(campusMap);
+ if(campusPoints.length>=3)L.polygon(campusPoints,{color:'#15803d',weight:3,fillColor:'#22c55e',fillOpacity:.18}).addTo(campusLayer);
+ else if(campusPoints.length===2)L.polyline(campusPoints,{color:'#15803d',weight:3}).addTo(campusLayer);
+ campusPoints.forEach((p,i)=>L.circleMarker(p,{radius:6,color:'#fff',weight:2,fillColor:'#15803d',fillOpacity:1}).bindTooltip(String(i+1)).addTo(campusLayer));
+ if(campusPoints.length)campusMap.fitBounds(L.latLngBounds(campusPoints).pad(.2));
+ $('campusZoneStatus').textContent='จุดขอบเขตวิทยาลัย '+campusPoints.length+' จุด • '+(campusDrawing?'กำลังวาด':'หยุดวาด');
+}
+function campusStartDraw(){
+ campusDrawing=!campusDrawing;
+ $('campusDrawBtn').textContent=campusDrawing?'หยุดวาด':'เริ่มวาดขอบเขตวิทยาลัย';
+ $('campusDrawBtn').style.background=campusDrawing?'#15803d':'';
+ drawCampusV127();
+}
+function campusUndoPoint(){campusPoints.pop();drawCampusV127();}
+function campusClearPoints(){campusPoints=[];drawCampusV127();}
+async function saveCampusZoneFromUI(){
+ if(campusPoints.length<3){$('campusZoneStatus').textContent='ต้องวาดอย่างน้อย 3 จุด';return;}
+ const b=$('campusSaveBtn');b.disabled=true;
+ try{
+  const result=await api('saveCampusZoneV127',token,{name:$('campusZoneName').value,
+    maxAccuracyMeters:Number($('campusMaxAccuracy').value),points:campusPoints});
+  campusDrawing=false; $('campusDrawBtn').textContent='เริ่มวาดขอบเขตวิทยาลัย';
+  $('campusZoneStatus').textContent='บันทึกแล้ว '+result.pointsCount+' จุด — ระบบใช้ตรวจ GPS จริง';
+  msg('บันทึกขอบเขตวิทยาลัยสำเร็จ นักเรียนจะยังเห็นเฉพาะโซนแสดงผลเดิม');
+ }catch(e){$('campusZoneStatus').textContent='บันทึกไม่สำเร็จ: '+e.message;}
+ finally{b.disabled=false;}
+}
+function updateCampusGpsStatusV127(){
+ const el=$('campusGpsStatus');if(!el)return;
+ if(!gpsFixV127){el.textContent='ยังไม่ได้ตรวจพิกัด GPS';updateCheckButton();return;}
+ const age=Date.now()-gpsFixV127.timestamp;
+ el.textContent='ได้รับพิกัดจากโทรศัพท์ • ความแม่นยำ '+Math.round(gpsFixV127.accuracy)+' เมตร • '+(age>30000?'หมดอายุ กรุณาตรวจใหม่':'โปรดถ่ายภาพและยืนยัน');
+}
+function acquireCampusGpsV127(){
+ if(!navigator.geolocation)return Promise.reject(new Error('เบราว์เซอร์ไม่รองรับ GPS หรือไม่ได้เปิดผ่าน HTTPS'));
+ return new Promise((resolve,reject)=>{
+  navigator.geolocation.getCurrentPosition(pos=>{
+   const x={latitude:pos.coords.latitude,longitude:pos.coords.longitude,
+     accuracy:pos.coords.accuracy,timestamp:pos.timestamp};
+   if(Date.now()-x.timestamp>30000){reject(new Error('พิกัดเก่า กรุณาตรวจใหม่'));return;}
+   resolve(x);
+  },err=>reject(new Error(err.code===1?'คุณไม่ได้อนุญาต GPS กรุณาเปิดสิทธิ์ตำแหน่ง':
+       err.code===3?'รอ GPS นานเกินไป กรุณาลองกลางแจ้ง':'ไม่สามารถระบุตำแหน่งได้')),
+   {enableHighAccuracy:true,timeout:15000,maximumAge:0});
+ });
+}
+async function checkCampusGpsNow(){
+ if(gpsBusyV127)return;
+ gpsBusyV127=true;const b=$('gpsCheckBtn');b.disabled=true;
+ $('campusGpsStatus').textContent='กำลังอ่านพิกัดล่าสุดจากโทรศัพท์...';
+ try{gpsFixV127=await acquireCampusGpsV127();updateCampusGpsStatusV127();}
+ catch(e){gpsFixV127=null;$('campusGpsStatus').textContent=e.message;}
+ finally{gpsBusyV127=false;b.disabled=false;updateCheckButton();}
+}
+
 </script></body></html>
