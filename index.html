@@ -10,7 +10,7 @@
 <div id="message" class="msg hide"></div>
 <section id="loginCard" class="card"><h3>เริ่มใช้งาน</h3><label>เลือกประเภทผู้ใช้<select id="role" onchange="toggleLoginFields()"><option value="student">นักเรียน (ไม่ต้องล็อกอิน)</option><option value="teacher">ครูผู้สอน</option></select></label><label id="userLabel">รหัสนักเรียน<input id="userId" autocomplete="off" placeholder="กรอกรหัสนักเรียน"></label><label id="passwordLabel" class="hide">รหัสผ่านครู<input id="password" type="password" autocomplete="current-password"></label><button onclick="signIn()" id="signInBtn">ตรวจสอบรหัสนักเรียน</button><p class="muted">การกรอกรหัสนักเรียนเพียงอย่างเดียวไม่สามารถยืนยันเจ้าของรหัสได้</p></section>
 <section id="app" class="hide"><div class="row" style="justify-content:space-between;margin-bottom:15px"><b id="welcome"></b><button class="secondary" onclick="signOut()">ออกจากระบบ</button></div>
-<div id="studentView" class="hide"><section class="card"><h3>เลือกการเช็คชื่อ</h3><label>รอบเช็คชื่อ<select id="studentSession" onchange="selectStudentSession()"></select></label><div id="studentDetails" class="info"></div><div id="studentMap" class="map"></div><div id="gpsStatus" class="info">พื้นที่สีฟ้าเป็นเขตอ้างอิงที่ครูกำหนด • ไม่มีการเก็บหรือตรวจพิกัดโทรศัพท์</div><section class="info"><b>📷 ถ่ายภาพเพื่อบันทึกหลักฐานเช็คชื่อ</b><p class="muted">เมื่อถ่ายภาพและยืนยัน ระบบจะบันทึกไฟล์ภาพลง Google Drive ส่วนตัวของผู้ดูแล เพื่อให้ครูตรวจย้อนหลังได้ ภาพไม่ใช่การตรวจใบหน้าอัตโนมัติ</p><video id="cameraView" autoplay playsinline muted class="hide" style="width:100%;max-width:340px;border-radius:10px;background:#111"></video><canvas id="cameraCanvas" class="hide"></canvas><img id="photoPreview" class="hide" alt="ตัวอย่างภาพที่ถ่าย" style="width:100%;max-width:340px;border-radius:10px"><div class="row"><button id="cameraBtn" type="button" onclick="startCamera()">เปิดกล้องหน้า</button><button id="snapBtn" class="hide" type="button" onclick="snapPhoto()">ถ่ายภาพยืนยัน</button><button id="retakeBtn" class="hide secondary" type="button" onclick="startCamera()">ถ่ายใหม่</button></div><p id="photoStatus" class="muted">ยังไม่ได้ถ่ายภาพ</p></section><div class="row"><button id="checkBtn" onclick="submitCheckIn()" disabled>ยืนยันเช็คชื่อ</button></div><p class="muted">ระบบไม่ขอสิทธิ์เข้าถึงตำแหน่งและไม่ตรวจสอบ GPS • ภาพจัดเก็บใน Drive ส่วนตัวของเจ้าของระบบ</p></section></div>
+<div id="studentView" class="hide"><section class="card"><h3>เลือกการเช็คชื่อ</h3><label>รอบเช็คชื่อ<select id="studentSession" onchange="selectStudentSession()"></select></label><div id="studentDetails" class="info"></div><div id="studentMap" class="map"></div><div id="gpsStatus" class="info">พื้นที่สีฟ้าเป็นเขตอ้างอิงที่ครูกำหนด • ไม่มีการเก็บหรือตรวจพิกัดโทรศัพท์</div><section class="info"><b>📷 ถ่ายภาพเพื่อบันทึกหลักฐานเช็คชื่อ</b><p class="muted">เมื่อถ่ายภาพและยืนยัน ระบบจะบันทึกไฟล์ภาพลง Google Drive ส่วนตัวของผู้ดูแล เพื่อให้ครูตรวจย้อนหลังได้ ภาพไม่ใช่การตรวจใบหน้าอัตโนมัติ</p><video id="cameraView" autoplay playsinline muted class="hide" style="width:100%;max-width:340px;border-radius:10px;background:#111"></video><canvas id="cameraCanvas" class="hide"></canvas><img id="photoPreview" class="hide" alt="ตัวอย่างภาพที่ถ่าย" style="width:100%;max-width:340px;border-radius:10px"><div class="row"><button id="cameraBtn" type="button" onclick="startCamera()">เปิดกล้องหน้า</button><button id="snapBtn" class="hide" type="button" onclick="snapPhoto()">ถ่ายภาพยืนยัน</button><button id="retakeBtn" class="hide secondary" type="button" onclick="startCamera()">ถ่ายใหม่</button></div><p id="photoStatus" class="muted">ยังไม่ได้ถ่ายภาพ</p></section><div class="row"><button id="checkBtn" onclick="submitCheckIn()" disabled>ยืนยันเช็คชื่อ</button><p id="checkReason" class="muted" role="status" aria-live="polite">กรุณาเลือกรอบเช็คชื่อและถ่ายภาพ</p></div><p class="muted">ระบบไม่ขอสิทธิ์เข้าถึงตำแหน่งและไม่ตรวจสอบ GPS • ภาพจัดเก็บใน Drive ส่วนตัวของเจ้าของระบบ</p></section></div>
 <div id="teacherView" class="hide"><section class="card"><h3>ครู: สร้างรอบเช็คชื่อและกำหนดขอบเขต</h3><div class="grid"><div><label>ประเภท<select id="type" onchange="refreshCourses()"><option value="ASSEMBLY">เข้าแถวตอนเช้า</option><option value="CLASS">เข้าเรียนรายวิชา</option></select></label><label>ห้องเรียน<select id="group" onchange="refreshCourses()"></select></label><label id="courseWrap">รายวิชา<select id="course"></select></label><label>ชื่อรอบ<input id="title" placeholder="เช่น เข้าแถวประจำวันที่ 6 พ.ย."></label><label>เริ่มเช็คชื่อ<input type="datetime-local" id="start"></label><label>สิ้นสุดเวลาไม่สาย<input type="datetime-local" id="late"></label><label>ปิดเช็คชื่อ<input type="datetime-local" id="end"></label></div><div><label>รูปแบบโซน<select id="zoneType" onchange="zoneTypeChanged()"><option value="RECTANGLE">โซนสี่เหลี่ยม (แตะ 2 มุม)</option><option value="POLYGON">โซนอิสระ (แตะอย่างน้อย 3 มุม)</option></select></label><input id="accuracy" type="hidden" value="15"><div class="row"><button type="button" id="drawZoneBtn" onclick="toggleZoneDrawing()">เริ่มวาดโซน</button><button type="button" class="secondary" onclick="undoZonePoint()">ย้อนกลับ 1 จุด</button><button type="button" class="secondary" onclick="clearZone()">ล้างโซน</button><button type="button" class="secondary" onclick="testZoneDrawing()">ทดสอบ 3 จุด</button></div><div id="zoneHelp" class="info" role="status" aria-live="polite">กดเริ่มวาดโซน จากนั้นแตะมุมบนแผนที่</div><p class="muted">สีฟ้าคือพื้นที่อ้างอิงเท่านั้น ไม่มีการตรวจ GPS หรือพิกัดนักเรียน</p></div></div><div id="teacherMap" class="map"></div>
 <div class="info" style="margin-top:12px"><label style="display:flex;align-items:center;gap:10px"><input type="checkbox" id="repeatWeekly" onchange="toggleWeekly()" style="width:auto;margin:0">ตั้งเวลาแบบประจำสัปดาห์ (จันทร์–อาทิตย์)</label>
 <div id="weeklyControls" class="hide">
@@ -92,7 +92,7 @@ async function loadStudentHome(){
       sel.disabled=true;
       $('studentDetails').textContent='ขณะนี้ไม่มีรอบเช็คชื่อที่เปิดอยู่สำหรับห้องของคุณ';
       $('gpsStatus').textContent='ระบบจะแสดงรอบโดยอัตโนมัติเมื่อถึงเวลาเปิดเช็คชื่อ';
-      $('checkBtn').disabled=true;
+      updateCheckButton();
       return;
     }
     sel.disabled=false;
@@ -149,7 +149,7 @@ function mapZone(map,s){
 function selectStudentSession(){
  selectedSession=studentHome.sessions.find(s=>s.sessionId===$('studentSession').value);
  stopCamera();clearPhoto();if(!selectedSession)return;
- const s=selectedSession,now=Date.now(),open=now>=Date.parse(s.startsAt)&&now<Date.parse(s.endsAt);
+ const s=selectedSession,open=true; // Server only returns sessions currently open.
  $('studentDetails').innerHTML='<b>'+escapeHtml(s.title)+'</b><br>ห้อง '+escapeHtml(s.groupId)+'<br>เวลา '+escapeHtml(s.startsAt.replace('T',' ').slice(0,16))+' ถึง '+escapeHtml(s.endsAt.replace('T',' ').slice(0,16))+'<br>โซนที่แสดงเป็นพื้นที่อ้างอิงเท่านั้น (ไม่ตรวจ GPS)<br>สถานะ: '+(s.checked?'เช็คชื่อแล้ว':open?'เปิดให้เช็คชื่อ':'ยังไม่เปิดหรือปิดแล้ว');
  $('gpsStatus').textContent='แผนที่แสดงพื้นที่ที่ครูกำหนดเท่านั้น ไม่มีการระบุพิกัดของนักเรียน';
  if(!studentMap)studentMap=makeMap('studentMap',s.latitude,s.longitude,17);
@@ -158,8 +158,16 @@ function selectStudentSession(){
  setTimeout(()=>studentMap.invalidateSize(),100);updateCheckButton();
 }
 function updateCheckButton(){
- const s=selectedSession,now=Date.now();
- $('checkBtn').disabled=!(photoDataUrl&&s&&!s.checked&&now>=Date.parse(s.startsAt)&&now<Date.parse(s.endsAt));
+ const s=selectedSession;
+ // getStudentHomeById returns ONLY server-open sessions. The backend
+ // rechecks exact time and duplicates atomically during checkInById.
+ const reason=!s?'ไม่มีรอบที่กำลังเปิดสำหรับนักเรียนคนนี้':
+   s.checked?'รอบนี้เช็คชื่อแล้ว':
+   !photoDataUrl?'กรุณาถ่ายภาพก่อนยืนยัน':
+   '';
+ $('checkBtn').disabled=!!reason;
+ $('checkReason').textContent=reason||'พร้อมยืนยันเช็คชื่อ (ระบบจะตรวจเวลาจากเซิร์ฟเวอร์อีกครั้ง)';
+ $('checkReason').classList.toggle('ok',!reason);
 }
 
 function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}$('cameraView').srcObject=null;$('cameraView').classList.add('hide');$('snapBtn').classList.add('hide');}
