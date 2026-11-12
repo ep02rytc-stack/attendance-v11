@@ -5,7 +5,7 @@
 <style>
 *{box-sizing:border-box}body{font-family:system-ui,'Noto Sans Thai',sans-serif;background:#f1f5f9;color:#172033;margin:0}header{background:#153c72;color:#fff;padding:18px 22px}header h2{margin:0;font-size:21px}header small{opacity:.85}.wrap{max-width:1050px;margin:20px auto;padding:0 14px}.card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 3px 16px #0f172a12}h3{margin:0 0 14px}label{display:block;margin-top:12px;font-weight:600;font-size:14px}input,select,button{font:inherit}input,select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;margin-top:5px;background:#fff}button{background:#1565c0;color:white;border:0;border-radius:10px;padding:10px 17px;cursor:pointer;margin-top:12px}button:disabled{background:#94a3b8;cursor:not-allowed}.secondary{background:#475569}.danger{color:#b91c1c}.ok{color:#16784b}.muted{color:#64748b;font-size:13px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.zone-number{background:transparent;border:0;box-shadow:none;color:#fff;font-weight:800;font-size:14px;padding:0;pointer-events:none}.zone-number:before{display:none}.map{width:100%;height:350px;border-radius:12px;margin-top:12px;border:1px solid #cbd5e1}.pill{padding:6px 10px;border-radius:50px;background:#e2e8f0;font-size:13px}.hide{display:none!important}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:13px}.msg{padding:10px 12px;border-radius:10px;background:#e8f1ff;margin-bottom:14px;white-space:pre-wrap}.info{padding:10px;background:#f8fafc;border-radius:10px;margin-top:10px}.display-grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:12px;margin-top:14px}.display-panel{min-width:0;background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:12px}.display-panel .map{height:290px;margin-top:8px}.photo-live{width:100%;max-height:280px;aspect-ratio:4/3;object-fit:contain;background:#e2e8f0;border-radius:10px}.foot{font-size:12px;color:#64748b;margin:20px 0}@media(max-width:850px){.display-grid{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.map{height:300px}}
 </style></head><body>
-<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V12.1 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
+<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V12.6 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
 <div class="wrap">
 <div id="message" class="msg hide"></div>
 <section id="loginCard" class="card"><h3>เริ่มใช้งาน</h3><label>เลือกประเภทผู้ใช้<select id="role" onchange="toggleLoginFields()"><option value="student">นักเรียน (ไม่ต้องล็อกอิน)</option><option value="teacher">ครูผู้สอน</option></select></label><label id="userLabel">รหัสนักเรียน<input id="userId" autocomplete="off" placeholder="กรอกรหัสนักเรียน"></label><label id="passwordLabel" class="hide">รหัสผ่านครู<input id="password" type="password" autocomplete="current-password"></label><button onclick="signIn()" id="signInBtn">ตรวจสอบรหัสนักเรียน</button><p class="muted">การกรอกรหัสนักเรียนเพียงอย่างเดียวไม่สามารถยืนยันเจ้าของรหัสได้</p></section>
@@ -21,6 +21,17 @@
 </div></div>
 <button id="saveSessionBtn" onclick="saveSession()">บันทึกรอบเช็คชื่อ</button>
 <div class="info" style="margin-top:16px"><b>ตารางเช็คชื่อประจำสัปดาห์</b><div id="weeklyList" style="margin-top:8px">ยังไม่มีตาราง</div></div></section>
+<section class="card" id="timeEditor"><h3>⏰ แก้ไขเวลาเช็คชื่อ (ครู)</h3>
+<p class="muted">เลือกแก้เฉพาะรอบรายวัน หรือเปลี่ยนเวลาของตารางประจำสัปดาห์ พร้อมอัปเดตรอบอนาคตที่ยังไม่เริ่ม • ข้อมูลเช็คชื่อและรูปภาพเดิมไม่ถูกลบ</p>
+<label>รูปแบบการแก้ไข<select id="timeEditMode" onchange="timeEditModeChanged()"><option value="session">เฉพาะรอบรายวัน (Sessions)</option><option value="weekly">ทุกสัปดาห์ (WeeklySchedules)</option></select></label>
+<label>เลือกรอบ / ตาราง<select id="timeEditTarget" onchange="timeEditTargetChanged()"></select></label>
+<div id="timeEditDetails" class="info"></div>
+<div class="grid">
+<div id="editDayFields"><label>เวลาเริ่มเช็คชื่อ (ประเทศไทย)<input type="datetime-local" id="editStartsAt" step="60"></label><label>เริ่มนับสาย<input type="datetime-local" id="editLateAfter" step="60"></label><label>ปิดเช็คชื่อ<input type="datetime-local" id="editEndsAt" step="60"></label></div>
+<div id="editWeekFields" class="hide"><label>เวลาเริ่มเช็คชื่อ<input type="time" id="editStartTime"></label><label>เริ่มนับสาย<input type="time" id="editLateTime"></label><label>ปิดเช็คชื่อ<input type="time" id="editEndTime"></label></div>
+</div>
+<button type="button" id="saveTimeEditBtn" onclick="saveTimeEdit()">บันทึกการแก้ไขเวลา</button>
+<p id="timeEditStatus" class="muted" role="status" aria-live="polite">กรุณาเลือกข้อมูลและตรวจสอบเวลาก่อนบันทึก</p></section>
 <section class="card"><h3>นำเข้ารายชื่อนักเรียนจาก Excel</h3>
 <p class="muted">รองรับไฟล์รายงานรายชื่อแยกตามกลุ่ม (หัวตารางแถว 10) และแม่แบบ Students • ไม่ส่งเลขบัตรประชาชนไปยังเซิร์ฟเวอร์</p>
 <label>เลือกไฟล์ Excel (.xlsx / .xls)<input id="rosterFile" type="file" accept=".xlsx,.xls,.csv" onchange="parseRosterFile()"></label>
@@ -203,7 +214,7 @@ async function submitCheckIn(){
 }
 
 async function loadTeacherHome(){try{
- teacherHome=await api('getTeacherHome',token);renderWeeklyList();const group=$('group'),prior=group.value;
+ teacherHome=await api('getTeacherHome',token);renderWeeklyList();renderTimeEditTargets();const group=$('group'),prior=group.value;
  group.innerHTML=teacherHome.groups.map(g=>'<option value="'+escapeHtml(g)+'">'+escapeHtml(g)+'</option>').join('');if(teacherHome.groups.includes(prior))group.value=prior;refreshCourses();
  const report=$('reportSession'),old=report.value;report.innerHTML=teacherHome.sessions.map(s=>'<option value="'+escapeHtml(s.sessionId)+'">'+escapeHtml(s.title)+' • '+escapeHtml(s.groupId)+'</option>').join('');if(teacherHome.sessions.some(s=>s.sessionId===old))report.value=old;
  if(!teacherMap){teacherMap=makeMap('teacherMap',13.7563,100.5018,6);teacherMap.on('click',e=>{if(zoneDrawing)addZonePoint(e.latlng.lat,e.latlng.lng);});teacherMap.doubleClickZoom.disable();}
@@ -445,4 +456,75 @@ async function commitRosterImport(){
  }catch(e){msg(e.message,true);b.disabled=false;}
 }
 
+
+
+// V12.6: Teacher-only time editor. Browser is only the UI;
+// authorization, validation and actual time edits occur in Code.gs.
+function editLocalTimeV126(iso) {
+  // Serialized by dateStr_ as YYYY-MM-DDTHH:mm:ss+07:00.
+  return String(iso||'').slice(0,16);
+}
+function renderTimeEditTargets() {
+  if(!$('timeEditTarget'))return;
+  const sel=$('timeEditTarget');
+  const old=sel.value;
+  const weekly=$('timeEditMode').value==='weekly';
+  const list=weekly?(teacherHome?.weeklySchedules||[]):(teacherHome?.sessions||[]);
+  sel.innerHTML=list.map(s=>'<option value="'+escapeHtml(weekly?s.scheduleId:s.sessionId)+'">'+escapeHtml(s.title)+' • '+escapeHtml(s.groupId)+'</option>').join('');
+  if(list.some(s=>(weekly?s.scheduleId:s.sessionId)===old))sel.value=old;
+  timeEditModeChanged(false);
+}
+function timeEditModeChanged(rebuild=true) {
+  const weekly=$('timeEditMode').value==='weekly';
+  $('editWeekFields').classList.toggle('hide',!weekly);
+  $('editDayFields').classList.toggle('hide',weekly);
+  if(rebuild){renderTimeEditTargets();return;}
+  timeEditTargetChanged();
+}
+function timeEditTargetChanged() {
+  const weekly=$('timeEditMode').value==='weekly';
+  const id=$('timeEditTarget').value;
+  const obj=(weekly?(teacherHome?.weeklySchedules||[]):(teacherHome?.sessions||[]))
+    .find(s=>(weekly?s.scheduleId:s.sessionId)===id);
+  if(!obj){$('timeEditDetails').textContent='ไม่พบรายการสำหรับแก้ไข';$('saveTimeEditBtn').disabled=true;return;}
+  $('saveTimeEditBtn').disabled=false;
+  $('timeEditDetails').textContent=obj.title+' • '+obj.groupId+(weekly?' • '+obj.startDate+' ถึง '+obj.endDate:'');
+  if(weekly){
+    $('editStartTime').value=obj.startTime;
+    $('editLateTime').value=obj.lateTime;
+    $('editEndTime').value=obj.endTime;
+  }else{
+    $('editStartsAt').value=editLocalTimeV126(obj.startsAt);
+    $('editLateAfter').value=editLocalTimeV126(obj.lateAfter);
+    $('editEndsAt').value=editLocalTimeV126(obj.endsAt);
+  }
+  $('timeEditStatus').textContent=weekly?'แก้ทุกสัปดาห์และรอบอนาคตที่ยังไม่เริ่ม (รอบวันนี้ที่เริ่มแล้วแก้ผ่านโหมดรายวัน)':'แก้เฉพาะรอบนี้ โดยไม่เปลี่ยนประวัติเช็คชื่อเดิม';
+}
+async function saveTimeEdit() {
+  if(role!=='teacher'||!token)return;
+  const weekly=$('timeEditMode').value==='weekly';
+  const id=$('timeEditTarget').value;
+  if(!id){msg('กรุณาเลือกรอบเช็คชื่อ',true);return;}
+  const values=weekly
+    ?{startTime:$('editStartTime').value,lateTime:$('editLateTime').value,endTime:$('editEndTime').value}
+    :{startsAt:$('editStartsAt').value,lateAfter:$('editLateAfter').value,endsAt:$('editEndsAt').value};
+  const [s,l,e]=weekly?[values.startTime,values.lateTime,values.endTime]
+                     :[values.startsAt,values.lateAfter,values.endsAt];
+  if(!s||!l||!e||!(s<=l&&l<=e)||s===e){msg('ช่วงเวลาต้องเรียง: เริ่มเช็คชื่อ → เริ่มนับสาย → ปิดเช็คชื่อ',true);return;}
+  const prompt=weekly?'ยืนยันแก้ตารางประจำสัปดาห์ และรอบที่ยังไม่เริ่มใช่หรือไม่?'
+                     :'ยืนยันเปลี่ยนเวลารอบนี้? ข้อมูลเช็คชื่อเดิมจะไม่ถูกเปลี่ยน';
+  if(!confirm(prompt))return;
+  const btn=$('saveTimeEditBtn');btn.disabled=true;$('timeEditStatus').textContent='กำลังบันทึกเวลา...';
+  try{
+    const result=await api(weekly?'updateWeeklyTimesV126':'updateSessionTimesV126',token,id,values);
+    msg(weekly?'แก้ตารางสำเร็จ • อัปเดตรอบอนาคต '+result.updatedFutureSessions+' รอบ':'แก้เวลารอบรายวันสำเร็จ');
+    $('timeEditStatus').textContent='บันทึกสำเร็จ • ให้นักเรียนรีเฟรชเพื่อเห็นเวลาใหม่';
+    await loadTeacherHome();
+    $('timeEditMode').value=weekly?'weekly':'session';
+    renderTimeEditTargets();
+    const select=$('timeEditTarget');
+    if([...select.options].some(o=>o.value===id)){select.value=id;timeEditTargetChanged();}
+  }catch(err){msg('แก้ไขเวลาไม่สำเร็จ: '+err.message,true);$('timeEditStatus').textContent=err.message;}
+  finally{btn.disabled=false;}
+}
 </script></body></html>
