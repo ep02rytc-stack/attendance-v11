@@ -43,6 +43,12 @@ let zoneDrawingError="",zoneRenderLayer=null;
 let token='', studentId='', role='', studentHome=null, teacherHome=null, studentMap=null,teacherMap=null,studentCircle=null,teacherCircle=null,zonePoints=[],studentMarker=null,teacherMarker=null,selectedSession=null,zoneDrawing=false,zoneVertices=[],cameraStream=null,photoDataUrl=null,liveMap=null,liveFence=null,liveSessionId='',livePolling=false,liveTimer=null,studentTimer=null,studentRefreshing=false;
 const $=id=>document.getElementById(id);
 window.addEventListener('DOMContentLoaded',initWeeklyForm);
+// V12.4 refresh promptly when returning, not every few seconds in background.
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden)return;
+ if(role==='student'&&studentId&&!studentRefreshing)loadStudentHome();
+ if(role==='teacher'&&liveSessionId&&!livePolling)refreshLive();
+});
 const escapeHtml=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function msg(s,err=false){$('message').textContent=s;$('message').classList.remove('hide');$('message').style.background=err?'#fee2e2':'#e8f1ff';}
 // V12.1: Set ONLY the public Cloudflare Worker URL below.
@@ -74,12 +80,12 @@ async function api(fn,...args) {
   }finally{clearTimeout(timer);}
 }
 
-// Refresh open sessions from server every 15 seconds; no client-only trust.
-async function loadStudentHome(){
+// Refresh open sessions from server every 60 seconds; no client-only trust.
+async function loadStudentHome(preloaded=null){
   if(role!=='student'||!studentId||studentRefreshing)return;
   studentRefreshing=true;
   try{
-    const data=await api('getStudentHomeById',studentId);
+    const data=preloaded||await api('getStudentHomeById',studentId);
     studentHome=data;
     const sel=$('studentSession'),prior=selectedSession?.sessionId||sel.value;
     const list=data.sessions||[];
@@ -108,12 +114,12 @@ async function loadStudentHome(){
 function startStudentRefresh(){
   if(studentTimer)clearInterval(studentTimer);
   studentTimer=setInterval(()=>{
-    if(role==='student'&&!$('studentView').classList.contains('hide'))loadStudentHome();
-  },15000);
+    if(!document.hidden&&role==='student'&&!$('studentView').classList.contains('hide'))loadStudentHome();
+  },60000);
 }
 function toggleLoginFields(){const t=$('role').value==='teacher';$('passwordLabel').classList.toggle('hide',!t);$('userLabel').firstChild.textContent=t?'ชื่อผู้ใช้ครู':'รหัสนักเรียน';$('signInBtn').textContent=t?'เข้าสู่ระบบครู':'ตรวจสอบรหัสนักเรียน';}
-async function signIn(){try{role=$('role').value;if(role==='student'){studentId=$('userId').value.trim();studentHome=await api('getStudentHomeById',studentId);token='';$('welcome').textContent='สวัสดี '+studentHome.name;}else{const data=await api('login','teacher',$('userId').value,$('password').value);token=data.token;$('welcome').textContent='สวัสดี '+data.name;}$('loginCard').classList.add('hide');$('app').classList.remove('hide');$('message').classList.add('hide');$('studentView').classList.toggle('hide',role!=='student');$('teacherView').classList.toggle('hide',role!=='teacher');if(role==='student'){await loadStudentHome();startStudentRefresh();}else{await loadTeacherHome();}}catch(e){msg(e.message,true)}}
-async function signOut(){if(studentTimer){clearInterval(studentTimer);studentTimer=null;}stopCamera();clearPhoto();try{await api('logout',token)}catch(e){} token='';location.reload();}
+async function signIn(){try{role=$('role').value;if(role==='student'){studentId=$('userId').value.trim();studentHome=await api('getStudentHomeById',studentId);token='';$('welcome').textContent='สวัสดี '+studentHome.name;}else{const data=await api('login','teacher',$('userId').value,$('password').value);token=data.token;$('welcome').textContent='สวัสดี '+data.name;}$('loginCard').classList.add('hide');$('app').classList.remove('hide');$('message').classList.add('hide');$('studentView').classList.toggle('hide',role!=='student');$('teacherView').classList.toggle('hide',role!=='teacher');if(role==='student'){await loadStudentHome(studentHome);startStudentRefresh();}else{await loadTeacherHome();}}catch(e){msg(e.message,true)}}
+async function signOut(){if(studentTimer){clearInterval(studentTimer);studentTimer=null;}stopCamera();clearPhoto();try{if(token)await api('logout',token)}catch(e){} token='';location.reload();}
 function makeMap(id,lat,lng,zoom){
   const map=L.map(id).setView([lat,lng],zoom);
   const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
@@ -177,11 +183,22 @@ function snapPhoto(){const v=$('cameraView');if(!cameraStream||!v.videoWidth){ms
 async function submitCheckIn(){
  if(!selectedSession||!photoDataUrl)return;
  const photo=photoDataUrl;
+ const checkInStartedAt=performance.now();
  try{
   $('checkBtn').disabled=true;
+  $('checkReason').textContent='กำลังบันทึกข้อมูลและภาพถ่าย กรุณาอย่ากดซ้ำหรือปิดหน้า';
   const result=await api('checkInById',studentId,selectedSession.sessionId,photo);
-  clearPhoto();msg('เช็คชื่อสำเร็จ: '+(result.status==='LATE'?'มาสาย':'มาเรียน')+' • บันทึกภาพลง Drive แล้ว');
-  await loadStudentHome();
+  // The server confirms Drive + Sheets before returning. No second blocking request.
+  if(selectedSession)selectedSession.checked=true;
+  if(studentHome?.sessions){
+    const item=studentHome.sessions.find(s=>s.sessionId===selectedSession?.sessionId);
+    if(item)item.checked=true;
+  }
+  clearPhoto();
+  const secs=Math.round((performance.now()-checkInStartedAt)/100)/10;
+  msg('เช็คชื่อสำเร็จ: '+(result.status==='LATE'?'มาสาย':'มาเรียน')+' • บันทึกภาพลง Drive แล้ว • ใช้เวลา '+secs+' วินาที');
+  if(selectedSession)$('studentDetails').textContent='เช็คชื่อรอบ '+selectedSession.title+' สำเร็จแล้ว (มีภาพใน Drive)';
+  updateCheckButton();
  }catch(e){msg(e.message,true);updateCheckButton();}
 }
 
@@ -329,7 +346,7 @@ function initLiveDashboard(s){
  }
  setTimeout(()=>liveMap?.invalidateSize(),100);
  refreshLive();
- if(!liveTimer)liveTimer=setInterval(()=>{if(role==='teacher'&&!$('teacherView').classList.contains('hide'))refreshLive();},5000);
+ if(!liveTimer)liveTimer=setInterval(()=>{if(!document.hidden&&role==='teacher'&&!$('teacherView').classList.contains('hide'))refreshLive();},15000);
 }
 function clearLivePreview(){
  $('liveInfo').textContent='รอการเช็คชื่อ…';
