@@ -4,10 +4,19 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{font-family:system-ui,'Noto Sans Thai',sans-serif;background:#f1f5f9;color:#172033;margin:0}header{background:#153c72;color:#fff;padding:18px 22px}header h2{margin:0;font-size:21px}header small{opacity:.85}.wrap{max-width:1050px;margin:20px auto;padding:0 14px}.card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 3px 16px #0f172a12}h3{margin:0 0 14px}label{display:block;margin-top:12px;font-weight:600;font-size:14px}input,select,button{font:inherit}input,select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;margin-top:5px;background:#fff}button{background:#1565c0;color:white;border:0;border-radius:10px;padding:10px 17px;cursor:pointer;margin-top:12px}button:disabled{background:#94a3b8;cursor:not-allowed}.secondary{background:#475569}.danger{color:#b91c1c}.ok{color:#16784b}.muted{color:#64748b;font-size:13px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.zone-number{background:transparent;border:0;box-shadow:none;color:#fff;font-weight:800;font-size:14px;padding:0;pointer-events:none}.zone-number:before{display:none}.map{width:100%;height:350px;border-radius:12px;margin-top:12px;border:1px solid #cbd5e1}.pill{padding:6px 10px;border-radius:50px;background:#e2e8f0;font-size:13px}.hide{display:none!important}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:13px}.msg{padding:10px 12px;border-radius:10px;background:#e8f1ff;margin-bottom:14px;white-space:pre-wrap}.info{padding:10px;background:#f8fafc;border-radius:10px;margin-top:10px}.display-grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:12px;margin-top:14px}.display-panel{min-width:0;background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:12px}.display-panel .map{height:290px;margin-top:8px}.photo-live{width:100%;max-height:280px;aspect-ratio:4/3;object-fit:contain;background:#e2e8f0;border-radius:10px}.foot{font-size:12px;color:#64748b;margin:20px 0}@media(max-width:850px){.display-grid{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.map{height:300px}}
+
+/* V12.7.4 public attendance dashboard (aggregates and partially redacted names). */
+.public-status{font-size:13px;color:#475569;margin:3px 0 12px}.public-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}.public-metric{text-align:center;border-radius:11px;background:#f1f5f9;padding:11px 5px}.public-metric strong{font-size:24px;display:block}.public-metric span{font-size:12px;color:#475569}.public-session{border:1px solid #cbd5e1;border-radius:11px;padding:13px;margin-top:10px}.public-session h4{margin:0 0 5px}.public-missing{margin-top:9px;max-height:220px;overflow:auto;font-size:13px}.public-missing span{display:inline-block;padding:6px 9px;margin:3px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa}.public-label{font-size:12px;color:#64748b}.public-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}@media(max-width:580px){.public-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.public-grid{grid-template-columns:1fr}}
 </style></head><body>
-<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V12.7.2 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
+<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V12.7.4 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
 <div class="wrap">
 <div id="message" class="msg hide"></div>
+<section id="publicAttendanceSection" class="card" aria-label="สรุปการเช็คชื่อสำหรับนักเรียน">
+ <div class="row" style="justify-content:space-between"><h3 style="margin:0">📋 สรุปการเช็คชื่อรอบล่าสุด</h3><button type="button" class="secondary" onclick="loadPublicAttendanceSummary()" id="publicRefreshBtn" style="margin:0">รีเฟรช</button></div>
+ <p class="public-status" id="publicAttendanceStatus" role="status">กำลังโหลดสรุปจากระบบ…</p>
+ <div id="publicAttendanceContent"></div>
+ <p class="public-label">รายชื่อบนหน้าเว็บสาธารณะจะปิดบังข้อมูลบางส่วน ไม่แสดงรหัสนักเรียน รูปภาพ หรือข้อมูลพิกัด • รายชื่อเต็มให้ครูตรวจได้ในดิสเพลย์ครู</p>
+</section>
 <section id="loginCard" class="card"><h3>เริ่มใช้งาน</h3><label>เลือกประเภทผู้ใช้<select id="role" onchange="toggleLoginFields()"><option value="student">นักเรียน (ไม่ต้องล็อกอิน)</option><option value="teacher">ครูผู้สอน</option></select></label><label id="userLabel">รหัสนักเรียน<input id="userId" autocomplete="off" placeholder="กรอกรหัสนักเรียน"></label><label id="passwordLabel" class="hide">รหัสผ่านครู<input id="password" type="password" autocomplete="current-password"></label><button onclick="signIn()" id="signInBtn">ตรวจสอบรหัสนักเรียน</button><p class="muted">การกรอกรหัสนักเรียนเพียงอย่างเดียวไม่สามารถยืนยันเจ้าของรหัสได้</p></section>
 <section id="app" class="hide"><div class="row" style="justify-content:space-between;margin-bottom:15px"><b id="welcome"></b><button class="secondary" onclick="signOut()">ออกจากระบบ</button></div>
 <div id="studentView" class="hide"><section class="card"><h3>เลือกการเช็คชื่อ</h3><label>รอบเช็คชื่อ<select id="studentSession" onchange="selectStudentSession()"></select></label><div class="row"><button type="button" class="secondary" id="refreshStudentBtn" onclick="refreshStudentNow()">รีเฟรชรอบและเวลา</button><span id="studentUpdatedAt" class="muted" role="status" aria-live="polite"></span></div><div id="studentDetails" class="info"></div><div id="studentMap" class="map"></div><div id="gpsStatus" class="info">พื้นที่สีฟ้าเป็นโซนแสดงผลเท่านั้น ไม่ใช้ตัดสินสิทธิ์ GPS</div><section class="info" id="campusGpsCheck"><b>📍 ตรวจ GPS — ต้องอยู่ภายในวิทยาลัย</b>
@@ -55,16 +64,23 @@
 <div class="row"><button id="rosterCheckBtn" disabled class="secondary" onclick="checkRosterImport()">ตรวจสอบกับฐานข้อมูล</button><button id="rosterImportBtn" disabled onclick="commitRosterImport()">ยืนยันนำเข้ารายชื่อ</button></div>
 <p class="muted">ระบบข้ามรหัสซ้ำโดยปริยาย • ควรสำรอง Google Sheets ก่อนนำเข้า • ห้ามนำเข้าบัญชีครูหรือเลขบัตรประชาชน</p>
 </section>
-<section class="card"><h3>ดิสเพลย์ครู / รายงาน</h3><label>เลือกรอบ<select id="reportSession" onchange="loadReport()"></select></label><button class="secondary" onclick="loadTeacherHome()">รีเฟรชรายการ</button>
+<section class="card"><h3>ดิสเพลย์ครู / รายงาน</h3>
+<div class="info" id="displayCurrentStatus" role="status" aria-live="polite">กำลังตรวจสอบรอบล่าสุด</div>
+<label style="display:flex;align-items:center;gap:9px"><input type="checkbox" id="displayAutoFollow" checked style="width:auto;margin:0" onchange="toggleDisplayAutoFollow()">ติดตามรอบล่าสุดโดยอัตโนมัติ (เปลี่ยนเมื่อวิชาหรือรอบใหม่เริ่ม)</label>
+<label>เลือกรอบ<select id="reportSession" onchange="onReportSessionManualChange()"></select></label>
+<div class="row"><button class="secondary" onclick="refreshTeacherDisplayNow()">รีเฟรชรายชื่อและรอบ</button><span id="displayLastUpdated" class="muted" role="status"></span></div>
 <div class="display-grid">
   <div class="display-panel"><h3>1. ข้อมูล</h3><div id="liveInfo" class="info">รอการเช็คชื่อ…</div><div id="liveCounts" class="info">กำลังโหลดสรุป</div></div>
   <div class="display-panel"><h3>2. พื้นที่อ้างอิงบนแผนที่</h3><div id="liveMap" class="map"></div><p id="liveGps" class="muted">แสดงเฉพาะโซนที่ครูกำหนด ไม่แสดงตำแหน่งนักเรียน</p></div>
   <div class="display-panel"><h3>3. ภาพถ่าย</h3><img id="livePhoto" class="photo-live hide" alt="ภาพยืนยันการเช็คชื่อครั้งล่าสุด"><div id="livePhotoPlaceholder" class="info">รอภาพจากการเช็คชื่อ • ครูสามารถเปิดภาพย้อนหลังในตารางรายชื่อ</div><p class="muted">ภาพถูกบันทึกเป็นไฟล์ส่วนตัวใน Google Drive และเก็บรหัสไฟล์ในชีต Attendance</p></div>
-</div><h3 style="margin-top:20px">รายชื่อนักเรียน</h3><div id="report"></div></section></div>
+</div><h3 style="margin-top:20px">รายชื่อนักเรียน</h3>
+<div id="displayUnmarked" class="info" aria-live="polite">กำลังโหลดรายชื่อที่ยังไม่เช็คชื่อ</div>
+<div id="report"></div></section></div>
 </section><p class="foot">แผนที่ดาวเทียม © Esri และผู้ให้บริการข้อมูลภาพถ่าย • แผนที่ถนน © OpenStreetMap contributors • ติดต่อผู้ดูแลระบบวิทยาลัยเพื่อแจ้งข้อผิดพลาด</p></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script>
 let zoneDrawingError="",zoneRenderLayer=null;
+let displayRosterTimer=null,displaySessionTimer=null,displayReportBusy=false,displayHomeBusy=false;
 let campusMap=null,campusLayer=null,campusPoints=[],campusDrawing=false,gpsFixV127=null,gpsBusyV127=false;
 let token='', studentId='', role='', studentHome=null, teacherHome=null, studentMap=null,teacherMap=null,studentCircle=null,teacherCircle=null,zonePoints=[],studentMarker=null,teacherMarker=null,selectedSession=null,zoneDrawing=false,zoneVertices=[],cameraStream=null,photoDataUrl=null,liveMap=null,liveFence=null,liveSessionId='',livePolling=false,liveTimer=null,studentTimer=null,studentRefreshing=false;
 const $=id=>document.getElementById(id);
@@ -73,7 +89,7 @@ window.addEventListener('DOMContentLoaded',initWeeklyForm);
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden)return;
  if(role==='student'&&studentId&&!studentRefreshing)loadStudentHome();
- if(role==='teacher'&&liveSessionId&&!livePolling)refreshLive();
+ if(role==='teacher'&&liveSessionId&&!livePolling){refreshLive();loadReport();refreshDisplaySessionOptions();}
 });
 const escapeHtml=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function msg(s,err=false){$('message').textContent=s;$('message').classList.remove('hide');$('message').style.background=err?'#fee2e2':'#e8f1ff';}
@@ -255,12 +271,90 @@ async function submitCheckIn(){
  }catch(e){msg(e.message,true);updateCheckButton();}
 }
 
+function displayTime_(value) {
+ const d = new Date(value);
+ return Number.isFinite(d.getTime()) ? d.toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
+}
+function sortedStartedSessions_(items) {
+ const now=Date.now();
+ return (items||[]).filter(s=>s.active!==false && Number.isFinite(new Date(s.startsAt).getTime()) && new Date(s.startsAt).getTime()<=now)
+  .sort((a,b)=>new Date(b.startsAt).getTime()-new Date(a.startsAt).getTime());
+}
+function updateDisplayCurrentStatus() {
+ const id=$('reportSession').value;
+ const s=(teacherHome?.sessions||[]).find(x=>String(x.sessionId)===id);
+ if(!s){$('displayCurrentStatus').textContent='ยังไม่มีรอบที่เริ่มแล้ว';return;}
+ const now=Date.now(),end=new Date(s.endsAt).getTime();
+ const start=new Date(s.startsAt).getTime();
+ const state=now<start?'ยังไม่เริ่ม':now<end?'กำลังเปิดเช็คชื่อ':'ปิดรับเช็คชื่อแล้ว — คงแสดงรายชื่อจนกว่าจะเปลี่ยนรอบ';
+ $('displayCurrentStatus').textContent='รอบที่แสดง: '+s.title+' • '+s.groupId+' | '+state+' | '+displayTime_(s.startsAt)+' ถึง '+displayTime_(s.endsAt);
+}
+function applyDisplaySessions_(sessions) {
+ const select=$('reportSession');
+ const previous=select.value;
+ const old=(teacherHome?.sessions||[]).find(s=>String(s.sessionId)===previous);
+ const started=sortedStartedSessions_(sessions);
+ let chosen=previous;
+ if($('displayAutoFollow').checked){
+   const newest=started[0];
+   if(newest){
+     const latestTime=new Date(newest.startsAt).getTime();
+     const previousTime=old?new Date(old.startsAt).getTime():-Infinity;
+     // If concurrent groups start together, retain the currently displayed room.
+     chosen=(old&&previousTime===latestTime)?previous:String(newest.sessionId);
+   } else chosen='';
+ } else if(!sessions.some(s=>String(s.sessionId)===chosen)) chosen=started[0]?String(started[0].sessionId):(sessions[0]?String(sessions[0].sessionId):'');
+ select.innerHTML=sessions.map(s=>'<option value="'+escapeHtml(s.sessionId)+'">'+escapeHtml(s.title)+' • '+escapeHtml(s.groupId)+' • '+escapeHtml(displayTime_(s.startsAt))+'</option>').join('');
+ select.value=chosen;
+ updateDisplayCurrentStatus();
+ return chosen!==previous;
+}
+function toggleDisplayAutoFollow(){
+ if($('displayAutoFollow').checked){
+  const changed=applyDisplaySessions_(teacherHome?.sessions||[]);
+  if(changed)loadReport();
+ }else updateDisplayCurrentStatus();
+}
+function onReportSessionManualChange(){
+ $('displayAutoFollow').checked=false;
+ updateDisplayCurrentStatus();
+ loadReport();
+}
+function startTeacherDisplayAutoRefresh(){
+ if(!displayRosterTimer)displayRosterTimer=setInterval(()=>{
+  if(role==='teacher'&&!document.hidden)loadReport();
+ },20000);
+ if(!displaySessionTimer)displaySessionTimer=setInterval(()=>{
+  if(role==='teacher'&&!document.hidden)refreshDisplaySessionOptions();
+ },45000);
+}
+async function refreshDisplaySessionOptions(){
+ if(displayHomeBusy||role!=='teacher'||!token)return;
+ displayHomeBusy=true;
+ try{
+  // Server materializes scheduled daily sessions before returning the list.
+  const newer=await api('getTeacherHome',token);
+  if(role!=='teacher')return;
+  const older=teacherHome;
+  teacherHome=newer;
+  const changed=applyDisplaySessions_(newer.sessions||[]);
+  if(changed)await loadReport();
+  else updateDisplayCurrentStatus();
+ }catch(e){$('displayLastUpdated').textContent='อัปเดตรอบไม่ได้: '+e.message;}
+ finally{displayHomeBusy=false;}
+}
+async function refreshTeacherDisplayNow(){
+ await refreshDisplaySessionOptions();
+ await loadReport();
+}
 async function loadTeacherHome(){try{
  teacherHome=await api('getTeacherHome',token);loadCampusZoneFromServer();renderWeeklyList();renderTimeEditTargets();const group=$('group'),prior=group.value;
  group.innerHTML=teacherHome.groups.map(g=>'<option value="'+escapeHtml(g)+'">'+escapeHtml(g)+'</option>').join('');if(teacherHome.groups.includes(prior))group.value=prior;refreshCourses();
- const report=$('reportSession'),old=report.value;report.innerHTML=teacherHome.sessions.map(s=>'<option value="'+escapeHtml(s.sessionId)+'">'+escapeHtml(s.title)+' • '+escapeHtml(s.groupId)+'</option>').join('');if(teacherHome.sessions.some(s=>s.sessionId===old))report.value=old;
+ applyDisplaySessions_(teacherHome.sessions||[]);
  if(!teacherMap){teacherMap=makeMap('teacherMap',13.7563,100.5018,6);teacherMap.on('click',e=>{if(zoneDrawing)addZonePoint(e.latlng.lat,e.latlng.lng);});teacherMap.doubleClickZoom.disable();}
- setTimeout(()=>teacherMap.invalidateSize(),100);updateZoneHelp();if(teacherHome.sessions.length)loadReport();
+ setTimeout(()=>teacherMap.invalidateSize(),100);updateZoneHelp();
+ if($('reportSession').value)await loadReport();
+ startTeacherDisplayAutoRefresh();
  }catch(e){msg(e.message,true)}}
 function refreshCourses(){const type=$('type').value,group=$('group').value;$('courseWrap').classList.toggle('hide',type!=='CLASS');$('course').innerHTML=(teacherHome?.courses||[]).filter(c=>c.groupId===group).map(c=>'<option value="'+escapeHtml(c.courseId)+'">'+escapeHtml(c.courseId+' • '+c.title)+'</option>').join('');}
 function toggleZoneDrawing(){
@@ -370,15 +464,32 @@ async function saveSession(){try{
  clearZone();await loadTeacherHome();
  }catch(e){msg(e.message,true)}}
 async function loadReport(){
+ if(displayReportBusy||role!=='teacher'||!token)return;
+ const id=$('reportSession').value;
+ if(!id)return;
+ displayReportBusy=true;
  try{
- const id=$('reportSession').value;if(!id)return;
  const data=await api('getSessionReport',token,id);
- const counts={PRESENT:0,LATE:0,ABSENT:0,PENDING:0};data.records.forEach(r=>counts[r.status]++);
- $('liveCounts').textContent='มาเรียน '+counts.PRESENT+' • สาย '+counts.LATE+' • ขาด '+counts.ABSENT+' • รอ '+counts.PENDING;
- $('report').innerHTML='<div class="info">มาเรียน '+counts.PRESENT+' • สาย '+counts.LATE+' • ขาด '+counts.ABSENT+' • ยังไม่เช็คชื่อ '+counts.PENDING+'</div><div style="overflow:auto"><table><thead><tr><th>รหัส</th><th>ชื่อ</th><th>สถานะ</th><th>เวลา</th><th>รูปยืนยัน</th></tr></thead><tbody>'+data.records.map(r=>'<tr><td>'+escapeHtml(r.studentId)+'</td><td>'+escapeHtml(r.name)+'</td><td>'+({PRESENT:'มาเรียน',LATE:'สาย',ABSENT:'ขาด',PENDING:'รอเช็คชื่อ'}[r.status])+'</td><td>'+escapeHtml(r.checkedAt.replace('T',' ').slice(0,16))+'</td><td>'+(r.hasPhoto?'<button type="button" data-photo="'+escapeHtml(r.recordId)+'">ดูรูป</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
+ if(id!==$('reportSession').value)return; // Discard stale responses on session switch.
+ const counts={PRESENT:0,LATE:0,ABSENT:0,PENDING:0};
+ (data.records||[]).forEach(r=>{if(Object.prototype.hasOwnProperty.call(counts,r.status))counts[r.status]++;});
+ $('liveCounts').textContent='มาเรียน '+counts.PRESENT+' • สาย '+counts.LATE+' • ขาด '+counts.ABSENT+' • ยังไม่เช็คชื่อ '+counts.PENDING;
+ const missing=(data.records||[]).filter(r=>r.status==='ABSENT'||r.status==='PENDING');
+ $('displayUnmarked').innerHTML='<b>ยังไม่เช็คชื่อ / ขาดเรียน '+missing.length+' คน</b>'+
+  (missing.length?'<div style="overflow:auto;max-height:340px"><table><thead><tr><th>รหัส</th><th>ชื่อ</th><th>สถานะ</th></tr></thead><tbody>'+missing.map(r=>'<tr><td>'+escapeHtml(r.studentId)+'</td><td>'+escapeHtml(r.name)+'</td><td style="font-weight:600;color:'+(r.status==='ABSENT'?'#b91c1c':'#92400e')+'">'+(r.status==='ABSENT'?'ขาดเรียน':'ยังไม่เช็คชื่อ')+'</td></tr>').join('')+'</tbody></table></div>':'<p class="ok">นักเรียนเช็คชื่อครบตามรายชื่อที่ลงทะเบียนแล้ว</p>');
+ const ordered=(data.records||[]).slice().sort((a,b)=>{
+   const priority={ABSENT:0,PENDING:1,LATE:2,PRESENT:3};
+   return (priority[a.status]??9)-(priority[b.status]??9)||String(a.studentId).localeCompare(String(b.studentId),'th');
+ });
+ $('report').innerHTML='<div class="info">มาเรียน '+counts.PRESENT+' • สาย '+counts.LATE+' • ขาด '+counts.ABSENT+' • ยังไม่เช็คชื่อ '+counts.PENDING+'</div><div style="overflow:auto"><table><thead><tr><th>รหัส</th><th>ชื่อ</th><th>สถานะ</th><th>เวลา</th><th>รูปยืนยัน</th></tr></thead><tbody>'+ordered.map(r=>'<tr><td>'+escapeHtml(r.studentId)+'</td><td>'+escapeHtml(r.name)+'</td><td>'+({PRESENT:'มาเรียน',LATE:'สาย',ABSENT:'ขาด',PENDING:'รอเช็คชื่อ'}[r.status]||'ไม่ทราบ')+'</td><td>'+escapeHtml((r.checkedAt||'').replace('T',' ').slice(0,16))+'</td><td>'+(r.hasPhoto?'<button type="button" data-photo="'+escapeHtml(r.recordId)+'">ดูรูป</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
  $('report').querySelectorAll('button[data-photo]').forEach(btn=>btn.addEventListener('click',()=>showAttendancePhoto(btn.dataset.photo)));
+ $('displayLastUpdated').textContent='อัปเดตรายชื่อ '+new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok'});
+ updateDisplayCurrentStatus();
  initLiveDashboard(data.session);
- }catch(e){msg(e.message,true)}
+ }catch(e){$('displayLastUpdated').textContent='โหลดรายชื่อไม่ได้: '+e.message;}
+ finally{displayReportBusy=false;
+  if(role==='teacher' && $('reportSession').value!==id) Promise.resolve().then(()=>loadReport());
+ }
 }
 async function showAttendancePhoto(recordId){
  try{
@@ -706,4 +817,34 @@ async function checkCampusGpsNow(){
  finally{gpsBusyV127=false;b.disabled=false;updateCheckButton();}
 }
 
+
+// Public read-only summary; teacher credentials are NEVER used or exposed.
+let publicSummaryLoadingV1274=false;
+async function loadPublicAttendanceSummary(){
+ if(publicSummaryLoadingV1274)return;
+ const btn=$('publicRefreshBtn');publicSummaryLoadingV1274=true;btn.disabled=true;
+ try{
+  const result=await api('getPublicAttendanceSummaryV1274');
+  const sessions=Array.isArray(result.sessions)?result.sessions:[];
+  const now=new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok'});
+  $('publicAttendanceStatus').textContent=sessions.length?'รอบล่าสุด • อัปเดต '+now:'ยังไม่มีรอบเช็คชื่อที่เริ่มแล้ว • อัปเดต '+now;
+  $('publicAttendanceContent').innerHTML=sessions.map(s=>{
+    const counts=s.counts||{};
+    const metrics=[['มาเรียน',counts.PRESENT||0],['มาสาย',counts.LATE||0],['ยังไม่เช็คชื่อ',counts.PENDING||0],['ขาดเรียน',counts.ABSENT||0]];
+    const names=(s.missing||[]).map(n=>'<span>'+escapeHtml(n.displayName)+' · '+(n.status==='ABSENT'?'ขาดเรียน':'ยังไม่เช็คชื่อ')+'</span>').join('');
+    return '<div class="public-session"><h4>'+escapeHtml(s.title)+' · '+escapeHtml(s.groupId)+'</h4>'+
+      '<div class="public-label">'+escapeHtml(displayTime_(s.startsAt))+' ถึง '+escapeHtml(displayTime_(s.endsAt))+' • '+(s.closed?'ปิดรับเช็คชื่อแล้ว':'กำลังเปิดเช็คชื่อ')+'</div>'+
+      '<div class="public-cards">'+metrics.map(m=>'<div class="public-metric"><strong>'+Number(m[1])+'</strong><span>'+m[0]+'</span></div>').join('')+'</div>'+
+      '<div class="public-label">'+(s.closed?'รายชื่อที่ยังไม่เช็คชื่อ (ขาดเรียน)':'รายชื่อที่ยังไม่เช็คชื่อ')+' — แสดงชื่อแบบปิดบังบางส่วน</div>'+
+      '<div class="public-missing">'+(names||'<span>เช็คชื่อครบแล้ว</span>')+'</div></div>';
+  }).join('');
+ }catch(err){
+  $('publicAttendanceStatus').textContent='โหลดสรุปไม่ได้: '+err.message;
+  $('publicAttendanceContent').innerHTML='';
+ }finally{publicSummaryLoadingV1274=false;btn.disabled=false;}
+}
+window.addEventListener('DOMContentLoaded',()=>{
+ loadPublicAttendanceSummary();
+ setInterval(()=>{if(!document.hidden)loadPublicAttendanceSummary();},30000);
+});
 </script></body></html>
