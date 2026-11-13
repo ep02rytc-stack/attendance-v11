@@ -5,7 +5,7 @@
 <style>
 *{box-sizing:border-box}body{font-family:system-ui,'Noto Sans Thai',sans-serif;background:#f1f5f9;color:#172033;margin:0}header{background:#153c72;color:#fff;padding:18px 22px}header h2{margin:0;font-size:21px}header small{opacity:.85}.wrap{max-width:1050px;margin:20px auto;padding:0 14px}.card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 3px 16px #0f172a12}h3{margin:0 0 14px}label{display:block;margin-top:12px;font-weight:600;font-size:14px}input,select,button{font:inherit}input,select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;margin-top:5px;background:#fff}button{background:#1565c0;color:white;border:0;border-radius:10px;padding:10px 17px;cursor:pointer;margin-top:12px}button:disabled{background:#94a3b8;cursor:not-allowed}.secondary{background:#475569}.danger{color:#b91c1c}.ok{color:#16784b}.muted{color:#64748b;font-size:13px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.zone-number{background:transparent;border:0;box-shadow:none;color:#fff;font-weight:800;font-size:14px;padding:0;pointer-events:none}.zone-number:before{display:none}.map{width:100%;height:350px;border-radius:12px;margin-top:12px;border:1px solid #cbd5e1}.pill{padding:6px 10px;border-radius:50px;background:#e2e8f0;font-size:13px}.hide{display:none!important}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:13px}.msg{padding:10px 12px;border-radius:10px;background:#e8f1ff;margin-bottom:14px;white-space:pre-wrap}.info{padding:10px;background:#f8fafc;border-radius:10px;margin-top:10px}.display-grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:12px;margin-top:14px}.display-panel{min-width:0;background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:12px}.display-panel .map{height:290px;margin-top:8px}.photo-live{width:100%;max-height:280px;aspect-ratio:4/3;object-fit:contain;background:#e2e8f0;border-radius:10px}.foot{font-size:12px;color:#64748b;margin:20px 0}@media(max-width:850px){.display-grid{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.map{height:300px}}
 </style></head><body>
-<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V12.7 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
+<header><h2>📷 ระบบเช็คชื่อด้วยภาพถ่าย <span style="font-size:12px;background:#fff;color:#153c72;border-radius:6px;padding:3px 6px">ZONE V12.7.2 • GitHub</span></h2><small>เข้าแถวตอนเช้า • เข้าเรียนรายวิชา • แสดงพื้นที่อ้างอิงบนแผนที่</small></header>
 <div class="wrap">
 <div id="message" class="msg hide"></div>
 <section id="loginCard" class="card"><h3>เริ่มใช้งาน</h3><label>เลือกประเภทผู้ใช้<select id="role" onchange="toggleLoginFields()"><option value="student">นักเรียน (ไม่ต้องล็อกอิน)</option><option value="teacher">ครูผู้สอน</option></select></label><label id="userLabel">รหัสนักเรียน<input id="userId" autocomplete="off" placeholder="กรอกรหัสนักเรียน"></label><label id="passwordLabel" class="hide">รหัสผ่านครู<input id="password" type="password" autocomplete="current-password"></label><button onclick="signIn()" id="signInBtn">ตรวจสอบรหัสนักเรียน</button><p class="muted">การกรอกรหัสนักเรียนเพียงอย่างเดียวไม่สามารถยืนยันเจ้าของรหัสได้</p></section>
@@ -29,8 +29,10 @@
 <p class="muted">โซนนี้แยกจากโซนสีฟ้าของโดม/ห้องเรียน นักเรียนยังเห็นเฉพาะโซนสีฟ้า ส่วนโซนนี้ใช้ตรวจตำแหน่งตอนเช็คชื่อเท่านั้น</p>
 <label>ชื่อพื้นที่<input id="campusZoneName" value="เขตวิทยาลัย" maxlength="70"></label>
 <label>ความแม่นยำ GPS สูงสุด (เมตร)<input id="campusMaxAccuracy" type="number" min="10" max="100" value="40"></label>
-<div class="row"><button type="button" onclick="campusStartDraw()" id="campusDrawBtn">เริ่มวาดขอบเขตวิทยาลัย</button><button class="secondary" type="button" onclick="campusUndoPoint()">ย้อนกลับจุด</button><button class="secondary" type="button" onclick="campusClearPoints()">ล้างจุด</button></div>
-<div id="campusMap" class="map" style="height:360px"></div><p class="muted">คลิกตามแนวขอบเขตจริงอย่างน้อย 3 จุด แล้วกดบันทึก ไม่ต้องใส่พิกัดจำลอง • บันทึกแทนโซน GPS เดิมเท่านั้น</p>
+<label>รูปแบบโซน (เหมือนแผนที่ 1)<select id="campusZoneType" onchange="campusTypeChanged()"><option value="RECTANGLE">โซนสี่เหลี่ยม (แตะ 2 มุม)</option><option value="POLYGON" selected>โซนอิสระ (แตะอย่างน้อย 3 มุม)</option></select></label>
+<div class="row"><button type="button" onclick="campusStartDraw()" id="campusDrawBtn">เริ่มวาดโซน</button><button class="secondary" type="button" onclick="campusUndoPoint()">ย้อนกลับ 1 จุด</button><button class="secondary" type="button" onclick="campusClearPoints()">ล้างโซน</button></div>
+<div id="campusZoneHelp" class="info" role="status">กดเริ่มวาดโซน จากนั้นแตะมุมบนแผนที่ (แผนที่ 2 ใช้ตรวจ GPS จริง)</div>
+<div id="campusMap" class="map" style="height:360px;min-width:0"></div><p class="muted">แผนที่ 2 มีทั้งภาพถ่ายดาวเทียม/ถนน และวาดพื้นที่ได้เหมือนแผนที่ 1 ต่างกันที่พื้นที่สีเขียวนี้ใช้ตรวจ GPS จริง ส่วนพื้นที่สีฟ้าของแผนที่ 1 เป็นเพียงภาพแสดงผล</p>
 <button type="button" onclick="saveCampusZoneFromUI()" id="campusSaveBtn">บันทึกโซนตรวจ GPS</button>
 <div class="info" id="campusZoneStatus" role="status">ยังไม่ได้โหลดโซนวิทยาลัย</div></section>
 <section class="card" id="timeEditor"><h3>⏰ แก้ไขเวลาเช็คชื่อ (ครู)</h3>
@@ -569,58 +571,111 @@ async function saveTimeEdit() {
 }
 
 // V12.7 campus zone is a separate teacher-only polygon. Student map remains blue zone only.
+// V12.7.1: Always initialize the campus editor independently of the RPC call.
+// A backend deployment mismatch must not leave a blank map.
+// V12.7.2 — Campus editor uses the SAME map engine and drawing UX as teacher map 1.
+// It remains independent: the green campus polygon is the GPS authorization boundary.
+function ensureCampusMapV127(){
+ if(campusMap){setTimeout(()=>campusMap.invalidateSize(),120);return campusMap;}
+ const sample=(teacherHome?.sessions||[]).find(x=>Number.isFinite(Number(x.latitude))&&Number.isFinite(Number(x.longitude))&&Number(x.latitude)>0&&Number(x.longitude)>0);
+ const fallback=sample?{lat:Number(sample.latitude),lng:Number(sample.longitude)}:{lat:12.7,lng:101.3};
+ campusMap=makeMap('campusMap',fallback.lat,fallback.lng,16); // satellite + streets, same as map 1
+ campusMap.doubleClickZoom.disable();
+ campusMap.on('click',e=>{
+  if(!campusDrawing)return;
+  if($('campusZoneType').value==='RECTANGLE'&&campusPoints.length>=2)campusPoints=[];
+  if(campusPoints.length>=20){$('campusZoneStatus').textContent='กำหนดได้สูงสุด 20 จุด';return;}
+  campusPoints.push([e.latlng.lat,e.latlng.lng]);
+  drawCampusV127();
+ });
+ setTimeout(()=>campusMap.invalidateSize(),160);
+ return campusMap;
+}
 async function loadCampusZoneFromServer(){
+ try{ensureCampusMapV127();drawCampusV127();}
+ catch(e){$('campusZoneStatus').textContent='สร้างแผนที่ไม่สำเร็จ: '+e.message;return;}
  try{
   const zone=await api('getCampusZoneV127',token);
-  if(!campusMap){
-   const sample=(teacherHome?.sessions||[]).find(x=>Number.isFinite(Number(x.latitude))&&Number.isFinite(Number(x.longitude))&&Number(x.latitude)>0&&Number(x.longitude)>0);
-   const fallback=sample?{lat:Number(sample.latitude),lng:Number(sample.longitude)}:{lat:12.7,lng:101.3};
-   campusMap=makeMap('campusMap',fallback.lat,fallback.lng,16);
-   campusMap.on('click',e=>{
-    if(!campusDrawing||campusPoints.length>=20)return;
-    campusPoints.push([e.latlng.lat,e.latlng.lng]);drawCampusV127();
-   });
-  }
   if(zone.configured){
    campusPoints=zone.points.map(p=>[Number(p[0]),Number(p[1])]);
+   $('campusZoneType').value='POLYGON';
    $('campusZoneName').value=zone.name;
    $('campusMaxAccuracy').value=zone.maxAccuracyMeters;
+   drawCampusV127();
+   campusMap.fitBounds(L.latLngBounds(campusPoints).pad(.15));
    $('campusZoneStatus').textContent='โหลดโซนตรวจ GPS แล้ว ('+campusPoints.length+' จุด)';
-  }else{
+  } else {
    $('campusZoneStatus').textContent='ยังไม่ได้กำหนดเขตวิทยาลัย — นักเรียนยังเช็คชื่อไม่ได้จนกว่าจะบันทึกโซน';
   }
-  drawCampusV127();
-  setTimeout(()=>campusMap.invalidateSize(),120);
- }catch(e){$('campusZoneStatus').textContent='โหลดโซนไม่ได้: '+e.message;}
+  setTimeout(()=>campusMap.invalidateSize(),160);
+ }catch(e){
+  $('campusZoneStatus').textContent='แผนที่พร้อมวาด แต่ยังโหลด/บันทึกโซนไม่ได้: '+e.message+' — ตรวจ Worker และ Apps Script V12.7';
+ }
+}
+function campusRenderedPointsV127(){
+ const p=campusPoints.map(x=>[Number(x[0]),Number(x[1])]);
+ if($('campusZoneType').value==='RECTANGLE'&&p.length===2){
+  const a=p[0],b=p[1];return [[a[0],a[1]],[a[0],b[1]],[b[0],b[1]],[b[0],a[1]]];
+ }
+ return p;
 }
 function drawCampusV127(){
  if(!campusMap)return;
- if(campusLayer)campusMap.removeLayer(campusLayer);
- campusLayer=L.layerGroup().addTo(campusMap);
- if(campusPoints.length>=3)L.polygon(campusPoints,{color:'#15803d',weight:3,fillColor:'#22c55e',fillOpacity:.18}).addTo(campusLayer);
- else if(campusPoints.length===2)L.polyline(campusPoints,{color:'#15803d',weight:3}).addTo(campusLayer);
- campusPoints.forEach((p,i)=>L.circleMarker(p,{radius:6,color:'#fff',weight:2,fillColor:'#15803d',fillOpacity:1}).bindTooltip(String(i+1)).addTo(campusLayer));
- if(campusPoints.length)campusMap.fitBounds(L.latLngBounds(campusPoints).pad(.2));
- $('campusZoneStatus').textContent='จุดขอบเขตวิทยาลัย '+campusPoints.length+' จุด • '+(campusDrawing?'กำลังวาด':'หยุดวาด');
+ try{
+  const p=campusPoints.map(x=>[Number(x[0]),Number(x[1])]);
+  const poly=campusRenderedPointsV127();
+  const fresh=L.layerGroup();
+  if(poly.length>=3)L.polygon(poly,{color:'#15803d',weight:4,opacity:1,dashArray:'10 6',fill:true,fillColor:'#22c55e',fillOpacity:.23,interactive:false}).addTo(fresh);
+  else if(poly.length===2)L.polyline(poly,{color:'#15803d',weight:4,dashArray:'10 6',interactive:false}).addTo(fresh);
+  p.forEach((pt,i)=>{
+   L.circleMarker(pt,{radius:11,color:'#fff',weight:3,fillColor:'#15803d',fillOpacity:1,interactive:false}).addTo(fresh);
+   L.tooltip({permanent:true,direction:'center',className:'zone-number',opacity:1,interactive:false,offset:[0,0]}).setContent(String(i+1)).setLatLng(pt).addTo(fresh);
+  });
+  fresh.addTo(campusMap);
+  if(campusLayer)campusMap.removeLayer(campusLayer);
+  campusLayer=fresh;
+  const count=$('campusZoneType').value==='RECTANGLE'?'2 มุม':'อย่างน้อย 3 มุม';
+  $('campusZoneHelp').textContent='แผนที่ 2 • เลือกแล้ว '+campusPoints.length+' จุด / '+count+' • '+(campusDrawing?'แตะบนแผนที่เพื่อกำหนดจุด':'กด “เริ่มวาดโซน” เพื่อเพิ่มจุด');
+  $('campusZoneHelp').style.background=poly.length>=3?'#dcfce7':'#f8fafc';
+  if(campusDrawing)campusMap.getContainer().style.cursor='crosshair';
+ }catch(e){$('campusZoneStatus').textContent='วาดโซนไม่สำเร็จ: '+e.message;console.error('Campus map draw failed',e);}
 }
 function campusStartDraw(){
+ ensureCampusMapV127();
  campusDrawing=!campusDrawing;
- $('campusDrawBtn').textContent=campusDrawing?'หยุดวาด':'เริ่มวาดขอบเขตวิทยาลัย';
+ $('campusDrawBtn').textContent=campusDrawing?'หยุดวาดโซน':'เริ่มวาดโซน';
  $('campusDrawBtn').style.background=campusDrawing?'#15803d':'';
+ campusMap.getContainer().style.cursor=campusDrawing?'crosshair':'';
+ campusMap.invalidateSize();
  drawCampusV127();
 }
-function campusUndoPoint(){campusPoints.pop();drawCampusV127();}
+function campusTypeChanged(){
+ // Clear points when switching shape types to avoid quietly interpreting old shapes differently.
+ campusPoints=[];drawCampusV127();
+ $('campusZoneStatus').textContent='เปลี่ยนรูปแบบแล้ว กรุณาวาดขอบเขตใหม่ (ยังไม่บันทึก)';
+}
+function campusUndoPoint(){if(campusPoints.length)campusPoints.pop();drawCampusV127();}
 function campusClearPoints(){campusPoints=[];drawCampusV127();}
 async function saveCampusZoneFromUI(){
- if(campusPoints.length<3){$('campusZoneStatus').textContent='ต้องวาดอย่างน้อย 3 จุด';return;}
+ const points=campusRenderedPointsV127();
+ const required=$('campusZoneType').value==='RECTANGLE'?2:3;
+ if(campusPoints.length<required||points.length<3){$('campusZoneStatus').textContent='กรุณาเลือก '+($('campusZoneType').value==='RECTANGLE'?'2 มุมตรงข้าม':'อย่างน้อย 3 จุด')+' ก่อนบันทึก';return;}
  const b=$('campusSaveBtn');b.disabled=true;
  try{
+  // Rectangles are converted to 4 polygon vertices before sending; backend remains unchanged.
   const result=await api('saveCampusZoneV127',token,{name:$('campusZoneName').value,
-    maxAccuracyMeters:Number($('campusMaxAccuracy').value),points:campusPoints});
-  campusDrawing=false; $('campusDrawBtn').textContent='เริ่มวาดขอบเขตวิทยาลัย';
-  $('campusZoneStatus').textContent='บันทึกแล้ว '+result.pointsCount+' จุด — ระบบใช้ตรวจ GPS จริง';
-  msg('บันทึกขอบเขตวิทยาลัยสำเร็จ นักเรียนจะยังเห็นเฉพาะโซนแสดงผลเดิม');
- }catch(e){$('campusZoneStatus').textContent='บันทึกไม่สำเร็จ: '+e.message;}
+   maxAccuracyMeters:Number($('campusMaxAccuracy').value),points});
+  campusDrawing=false;
+  $('campusDrawBtn').textContent='เริ่มวาดโซน';
+  $('campusDrawBtn').style.background='';
+  campusMap.getContainer().style.cursor='';
+  // Normalize to polygon on success; this matches how the backend stores the campus zone.
+  campusPoints=points.map(p=>p.slice());
+  $('campusZoneType').value='POLYGON';
+  drawCampusV127();
+  $('campusZoneStatus').textContent='บันทึกแล้ว '+result.pointsCount+' จุด — ใช้ตรวจ GPS จริง';
+  msg('บันทึกขอบเขตวิทยาลัยสำเร็จ โซนแสดงผลเดิมไม่เปลี่ยน');
+ }catch(e){$('campusZoneStatus').textContent='บันทึกไม่สำเร็จ: '+e.message+' (ตรวจการ Deploy Worker และ Apps Script)';}
  finally{b.disabled=false;}
 }
 function updateCampusGpsStatusV127(){
